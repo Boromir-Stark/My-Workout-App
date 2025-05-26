@@ -325,7 +325,9 @@ elif st.session_state.page == "log":
             st.rerun()
 
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
-        weight = st.text_input("Weight (lbs)")
+        # Prefill weight with last logged value if available
+        last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
+        weight = st.text_input("Weight (lbs)", value=str(last_weight))
         time = st.text_input("Time (min)")
 
         # Inline distance + unit selector
