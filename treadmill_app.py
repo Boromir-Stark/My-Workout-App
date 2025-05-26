@@ -8,7 +8,6 @@ from uuid import uuid4
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
-import copy  # for safely editing secrets
 
 # ─── App Setup ───
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
@@ -24,11 +23,11 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
-# ─── Google Sheets Auth (via Secret) ───
+# ─── Google Sheets Auth (from Streamlit Secrets) ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-# Deep copy the secret and fix private key formatting
-gcp_info = copy.deepcopy(st.secrets["gcp"])
+# Safely copy and fix the private key
+gcp_info = dict(st.secrets["gcp"])
 if "\\n" in gcp_info["private_key"]:
     gcp_info["private_key"] = gcp_info["private_key"].replace("\\n", "\n")
 
