@@ -178,7 +178,6 @@ if os.path.exists(LOGO_FILE):
         st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
-
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
@@ -188,7 +187,6 @@ if st.session_state.page == "home":
     # Weekly Tracker
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
-
     try:
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df_week = df[(df["date"].dt.date >= start_of_week) & (df["date"].dt.date <= end_of_week)]
@@ -234,7 +232,7 @@ if st.session_state.page == "home":
     weekday_cols = st.columns(7)
     weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     for i in range(7):
-        weekday_cols[i].markdown(f"**{weekdays[i]}**", unsafe_allow_html=True)
+        weekday_cols[i].markdown(f"<div style='text-align:center'><strong>{weekdays[i]}</strong></div>", unsafe_allow_html=True)
 
     # Extended calendar days
     first_day = datetime(current_month.year, current_month.month, 1).date()
@@ -253,10 +251,11 @@ if st.session_state.page == "home":
             is_today = (day == today)
             is_selected = (st.session_state.selected_day == day)
             has_workout = not df[df["date"].dt.date == day].empty
-            bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
+
+            bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#222222")
             emoji = "🔥" if has_workout else ""
             border = "2px solid #64b5f6"
-            glow = "0 0 10px #00BFFF" if is_today else ""
+            glow = "0 0 12px #00BFFF" if is_today else ""
             box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
             text_color = '#555555' if not in_current_month else TEXT_COLOR
 
@@ -269,7 +268,7 @@ if st.session_state.page == "home":
                         background-color: {bg_color};
                         color: {text_color};
                         border: {border};
-                        {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
+                        {'box-shadow: ' + glow + ';' if is_today and not is_selected else 'box-shadow: ' + box_shadow + ';'}
                         font-weight: bold;
                         font-size: 16px;
                         padding: 12px 0;
@@ -321,7 +320,6 @@ if st.session_state.page == "home":
         if st.button("⚙️ Settings"):
             st.session_state.page = "settings"
             st.rerun()
-
 
 
 
