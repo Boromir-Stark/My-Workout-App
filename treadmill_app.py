@@ -57,13 +57,13 @@ def load_data(user_id):
         data = sheet.worksheet(WORKOUT_TAB).get_all_records()
         df = pd.DataFrame(data)
         if df.empty or "date" not in df.columns:
-            return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "incline", "vertical_feet", "calories", "user"])
+            return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "user"])
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df[df["user"] == user_id]
         return df.dropna(subset=["date"])
     except Exception as e:
         st.error(f"Workout Load Error: {e}")
-        return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "incline", "vertical_feet", "calories", "user"])
+        return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "user"])
 
 def save_data(user_id, df):
     try:
@@ -342,7 +342,6 @@ elif st.session_state.page == "log":
             distance = st.text_input("Distance", "")
         with col2:
             unit = st.radio(" ", ["miles", "km"], horizontal=True, index=0)
-        incline = st.text_input("Incline (%)", "")
         vertical = st.text_input("Vertical Distance (ft)", "")
         submitted = st.form_submit_button("Save Workout")
 
@@ -361,7 +360,6 @@ elif st.session_state.page == "log":
             w = parse_float(weight, "Weight")
             t = parse_float(time, "Time")
             d = parse_float(distance, "Distance")
-            inc = parse_float(incline, "Incline")
             vert = parse_float(vertical, "Vertical Distance")
             if None in [w, t, d, inc, vert]:
                 st.error("❌ Please fix the inputs.")
@@ -370,14 +368,16 @@ elif st.session_state.page == "log":
                 w_kg = w * 0.453592
                 time_hr = t / 60
                 MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
-                kcal = MET * w_kg * time_hr
+                cal_flat = MET * w_kg * time_hr
+                vertical_m = vert * 0.3048  # convert feet to meters
+                cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184  # climbing calories
+                kcal = cal_flat + cal_climb
                 parsed_date = pd.to_datetime(date)
                 new_row = {
                     "date": parsed_date.strftime("%Y-%m-%d"),
                     "weight_lbs": w,
                     "time_min": t,
                     "distance_km": dist_km,
-                    "incline": inc,
                     "vertical_feet": vert,
                     "calories": round(kcal, 2),
                     "user": st.session_state.user
