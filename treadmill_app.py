@@ -247,47 +247,55 @@ if st.session_state.page == "home":
 
     weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
     for week in weeks:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            in_current_month = day.month == current_month.month
-            is_today = (day == today)
-            is_selected = (st.session_state.selected_day == day)
-            has_workout = not df[df["date"].dt.date == day].empty
-            bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
-            emoji = "🔥" if has_workout else ""
-            border = "2px solid #64b5f6"
-            glow = "0 0 10px #00BFFF" if is_today else ""
-            box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
-            text_color = '#555555' if not in_current_month else TEXT_COLOR
+    cols = st.columns(7)
+    for i, day in enumerate(week):
+        in_current_month = day.month == current_month.month
+        is_today = (day == today)
+        is_selected = (st.session_state.selected_day == day)
+        has_workout = not df[df["date"].dt.date == day].empty
 
-            with cols[i]:
-                btn_label = f"{day.day} {emoji}"
-                clicked = st.button(btn_label, key=f"day_{day}")
-                st.markdown(f'''
-                    <style>
-                    [data-testid="stButton"][key="day_{day}"] button {{
-                        background-color: {bg_color};
-                        color: {text_color};
-                        border: {border};
-                        {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
-                        font-weight: bold;
-                        font-size: 16px;
-                        padding: 12px 0;
-                        border-radius: 10px;
-                        width: 100%;
-                        height: 48px;
-                        text-align: center;
-                    }}
-                    </style>
-                ''', unsafe_allow_html=True)
-                if clicked:
-                    if has_workout:
-                        st.session_state.selected_day = day
-                        st.rerun()
-                    else:
-                        st.session_state.log_for_date = day
-                        st.session_state.page = "log"
-                        st.rerun()
+        # Colors
+        bg_color = (
+            "#FFD700" if is_today else
+            (BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc"))
+        )
+        text_color = "#000000" if is_today else ("#555555" if not in_current_month else TEXT_COLOR)
+        border = "3px solid #2196f3" if is_today else "2px solid #64b5f6"
+        box_shadow = "0 0 10px 3px #00BFFF" if is_today else "none"
+
+        emoji = "🔥" if has_workout else ""
+        btn_label = f"{day.day} {emoji}"
+
+        with cols[i]:
+            clicked = st.button(btn_label, key=f"day_{day}")
+
+            st.markdown(f'''
+                <style>
+                [data-testid="stButton"][key="day_{day}"] button {{
+                    background-color: {bg_color};
+                    color: {text_color};
+                    border: {border};
+                    box-shadow: {box_shadow};
+                    font-weight: bold;
+                    font-size: 16px;
+                    padding: 12px 0;
+                    border-radius: 10px;
+                    width: 100%;
+                    height: 48px;
+                    text-align: center;
+                }}
+                </style>
+            ''', unsafe_allow_html=True)
+
+            if clicked:
+                if has_workout:
+                    st.session_state.selected_day = day
+                    st.rerun()
+                else:
+                    st.session_state.log_for_date = day
+                    st.session_state.page = "log"
+                    st.rerun()
+
 
     if st.session_state.selected_day:
         st.markdown("---")
