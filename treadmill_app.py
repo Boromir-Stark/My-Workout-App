@@ -184,7 +184,6 @@ if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
     today = datetime.today().date()
     current_month = st.session_state.selected_month
-
     # Weekly Tracker
 start_of_week = today - timedelta(days=today.weekday())
 end_of_week = start_of_week + timedelta(days=6)
@@ -214,7 +213,6 @@ st.markdown(f"""
         <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
     </div>
 """, unsafe_allow_html=True)
-
 
     df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
 
