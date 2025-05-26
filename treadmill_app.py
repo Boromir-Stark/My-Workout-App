@@ -250,12 +250,12 @@ if st.session_state.page == "home":
     today_class = "today-button-highlight"
 
     for week in weeks:
-    cols = st.columns(7)
-    for i, day in enumerate(week):
-        in_current_month = day.month == current_month.month
-        is_today = (day == today)
-        is_selected = (st.session_state.selected_day == day)
-        has_workout = not df[df["date"].dt.date == day].empty
+        cols = st.columns(7)
+        for i, day in enumerate(week):
+            in_current_month = day.month == current_month.month
+            is_today = (day == today)
+            is_selected = (st.session_state.selected_day == day)
+            has_workout = not df[df["date"].dt.date == day].empty
 
         # Visuals
         bg_color = (
