@@ -195,6 +195,7 @@ if st.session_state.page == "home":
     except Exception:
         weekly_count = 0
     weekly_goal = settings.get("weekly_goal", 5)
+
     def get_week_color(count):
         if count == 0: return "#8B0000"
         elif count == 1: return "#B22222"
@@ -203,6 +204,7 @@ if st.session_state.page == "home":
         elif count == 4: return "#228B22"
         elif count == 5: return "#1E90FF"
         else: return "#800080"
+
     st.markdown(f"""
         <div style="text-align:center; font-size:20px; margin-bottom:12px;">
             Weekly Workouts: <span style="color:{get_week_color(weekly_count)}; font-weight:bold;">{weekly_count}</span> / {weekly_goal}
@@ -211,6 +213,7 @@ if st.session_state.page == "home":
 
     df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
 
+    # Month Nav
     nav1, nav2, nav3 = st.columns([1, 5, 1])
     with nav1:
         if st.button("◀️"):
@@ -224,9 +227,25 @@ if st.session_state.page == "home":
             st.rerun()
     with nav2:
         st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
+
+    # Weekday Headers
+    headers = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    cols = st.columns(7)
+    for i, day in enumerate(headers):
+        cols[i].markdown(f"<div style='text-align:center; font-weight:bold;'>{day}</div>", unsafe_allow_html=True)
+
+    # Calendar Grid
     first_day = current_month
     _, last_day = monthrange(first_day.year, first_day.month)
     dates = [first_day + timedelta(days=i) for i in range(last_day)]
+
+    # Add padding days if next month's first days fall in same week
+    last_date = dates[-1]
+    last_wkday = last_date.weekday()
+    if last_wkday < 6:  # Fill in with next month days
+        for i in range(1, 7 - last_wkday):
+            dates.append(last_date + timedelta(days=i))
+
     days_grid = [[] for _ in range(6)]
     start_wkday = first_day.weekday()
     week_idx = 0
@@ -245,7 +264,7 @@ if st.session_state.page == "home":
             if day:
                 is_today = (day == today)
                 is_selected = (st.session_state.selected_day == day)
-                has_workout = not df_month[df_month["date"].dt.date == day].empty
+                has_workout = not df[df["date"].dt.date == day].empty
                 bg_color = BG_WORKOUT if has_workout else BG_EMPTY
                 emoji = "🔥" if has_workout else ""
                 border = "2px solid #64b5f6"
@@ -273,7 +292,8 @@ if st.session_state.page == "home":
                         </style>
                     ''', unsafe_allow_html=True)
                     if clicked:
-                        if has_workout:
+                        match = df[df["date"].dt.date == day]
+                        if not match.empty:
                             st.session_state.selected_day = day
                             st.rerun()
                         else:
@@ -283,6 +303,7 @@ if st.session_state.page == "home":
             else:
                 cols[i].markdown(" ")
 
+    # Summary for selected day
     if st.session_state.selected_day:
         st.markdown("---")
         selected = st.session_state.selected_day
