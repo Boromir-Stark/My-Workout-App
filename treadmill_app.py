@@ -1,18 +1,17 @@
 import streamlit as st
 import pandas as pd
 import base64
+import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 from uuid import uuid4
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import json
 import os
 
-# ─── App Setup ───
+# ─── App Config ───
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
-
 LOGO_FILE = "app_logo.png"
 SHEET_ID = "1beo7KZ7eDUl8tfK5DqZ0JMYiGuWApMIoVCarljUhCBo"
 WORKOUT_TAB = "workouts"
@@ -32,12 +31,8 @@ if "\\n" in gcp_info["private_key"]:
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
-try:
-    sheet = gc.open_by_key(SHEET_ID)
-    st.success("✅ Connected to Google Sheet: " + sheet.title)
-except Exception as e:
-    st.error("❌ Could not open Google Sheet. Check access and quota.")
-    st.stop()
+sheet = gc.open_by_key(SHEET_ID)
+st.success("✅ Connected to Google Sheet: Workout Data")
 
 # ─── Session Init ───
 if "page" not in st.session_state:
@@ -54,10 +49,9 @@ if "df" not in st.session_state:
 # ─── Google Sheets Helpers ───
 def load_data(user_id):
     try:
-        data = sheet.worksheet(WORKOUT_TAB).get_all_records()
+        ws = sheet.worksheet(WORKOUT_TAB)
+        data = ws.get_all_records()
         df = pd.DataFrame(data)
-        if "date" not in df.columns:
-            return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "incline", "vertical_feet", "calories", "user"])
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df[df["user"] == user_id]
         return df.dropna(subset=["date"])
@@ -71,38 +65,22 @@ def save_data(user_id, df):
         df["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
         existing = pd.DataFrame(ws.get_all_records())
-
         if not existing.empty:
             existing = existing[existing["user"] != user_id]
-
         full = pd.concat([existing, df], ignore_index=True)
 
-        # 🔧 Fix: Convert all datetime columns to strings
+        # 🔧 Fix Timestamp serialization
         for col in full.columns:
             if full[col].dtype == "datetime64[ns]":
                 full[col] = full[col].dt.strftime("%Y-%m-%d")
             elif full[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
                 full[col] = full[col].apply(lambda x: x.strftime("%Y-%m-%d") if isinstance(x, pd.Timestamp) else x)
 
-        # ✅ Save to Google Sheets
         ws.clear()
         ws.update([full.columns.tolist()] + full.values.tolist())
-
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
-full = full.copy()
-for col in full.columns:
-    if full[col].dtype == "datetime64[ns]":
-        full[col] = full[col].dt.strftime("%Y-%m-%d")
-    elif full[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
-        full[col] = full[col].apply(lambda x: x.strftime("%Y-%m-%d") if isinstance(x, pd.Timestamp) else x)
-
-# Now update
-ws.update([full.columns.tolist()] + full.values.tolist())
-    except Exception as e:
-        st.error(f"Workout Save Error: {e}")
-
-def load_settings(user_id):
+        def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
         records = ws.get_all_records()
@@ -121,7 +99,8 @@ def load_settings(user_id):
         }
         save_settings(user_id, default)
         return default
-    except:
+    except Exception as e:
+        st.error(f"Settings Load Error: {e}")
         return {
             "user": user_id,
             "name": user_id,
@@ -135,15 +114,10 @@ def load_settings(user_id):
 
 def save_settings(user_id, settings):
     try:
-        settings["user"] = user_id
         ws = sheet.worksheet(SETTINGS_TAB)
-        existing_data = ws.get_all_records()
-        existing = pd.DataFrame(existing_data)
-        if existing.empty:
-            combined = pd.DataFrame([settings])
-        else:
-            existing = existing[existing["user"] != user_id]
-            combined = pd.concat([existing, pd.DataFrame([settings])], ignore_index=True)
+        existing = pd.DataFrame(ws.get_all_records())
+        existing = existing[existing["user"] != user_id]
+        combined = pd.concat([existing, pd.DataFrame([settings])], ignore_index=True)
         ws.clear()
         ws.update([combined.columns.tolist()] + combined.values.tolist())
     except Exception as e:
@@ -155,7 +129,17 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except:
         return []
-        # ─── User Selector ───
+
+# ─── Logo Display ───
+if os.path.exists(LOGO_FILE):
+    with open(LOGO_FILE, "rb") as img_file:
+        encoded = base64.b64encode(img_file.read()).decode()
+        st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
+
+# ─── App Title ───
+st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
+
+# ─── User Selector ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
 display_names = [name for _, name in user_list]
@@ -193,16 +177,8 @@ else:
     st.session_state.user = user_ids[display_names.index(selection)]
 
 settings = load_settings(st.session_state.user)
+theme = settings.get("theme", "dark")
 df = load_data(st.session_state.user) if st.session_state.df is None else st.session_state.df
-df["date"] = pd.to_datetime(df["date"], errors="coerce")  # ensure always usable with .dt
-
-# ─── Logo ───
-if os.path.exists(LOGO_FILE):
-    with open(LOGO_FILE, "rb") as img_file:
-        encoded = base64.b64encode(img_file.read()).decode()
-        st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
-
-st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
 
 # ─── Home Page ───
 if st.session_state.page == "home":
@@ -213,8 +189,16 @@ if st.session_state.page == "home":
     # Weekly Tracker
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
-    df_week = df[(df["date"].dt.date >= start_of_week) & (df["date"].dt.date <= end_of_week)]
-    weekly_count = df_week["date"].dt.date.nunique()
+    if not df.empty and "date" in df.columns:
+        try:
+            df_week = df[(pd.to_datetime(df["date"]).dt.date >= start_of_week) & (pd.to_datetime(df["date"]).dt.date <= end_of_week)]
+        except Exception as e:
+            st.error(f"Weekly tracker error: {e}")
+            df_week = pd.DataFrame(columns=["date"])
+    else:
+        df_week = pd.DataFrame(columns=["date"])
+
+    weekly_count = df_week["date"].nunique()
     weekly_goal = settings.get("weekly_goal", 5)
 
     def get_week_color(count):
@@ -231,9 +215,7 @@ if st.session_state.page == "home":
             Weekly Workouts: <span style="color:{get_week_color(weekly_count)}; font-weight:bold;">{weekly_count}</span> / {weekly_goal}
         </div>
     """, unsafe_allow_html=True)
-
-    df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
-
+    # Monthly Calendar Nav
     nav1, nav2, nav3 = st.columns([1, 5, 1])
     with nav1:
         if st.button("◀️"):
@@ -269,7 +251,7 @@ if st.session_state.page == "home":
             if day:
                 is_today = (day == today)
                 is_selected = (st.session_state.selected_day == day)
-                has_workout = not df_month[df_month["date"].dt.date == day].empty
+                has_workout = not df[df["date"].dt.strftime("%Y-%m-%d") == str(day)].empty
                 bg_color = BG_WORKOUT if has_workout else BG_EMPTY
                 emoji = "🔥" if has_workout else ""
                 border = "2px solid #64b5f6"
@@ -310,6 +292,7 @@ if st.session_state.page == "home":
             else:
                 cols[i].markdown(" ")
 
+    # Daily Summary
     if st.session_state.selected_day:
         st.markdown("---")
         selected = st.session_state.selected_day
@@ -341,26 +324,19 @@ if st.session_state.page == "home":
         if st.button("⚙️ Settings"):
             st.session_state.page = "settings"
             st.rerun()
-            # ─── Log Workout Page ───
+
+# ─── Workout Logging Page ───
 elif st.session_state.page == "log":
     st.title("🏋️ Log Workout")
     if st.button("🏠 Home"):
         st.session_state.page = "home"
         st.rerun()
 
-    if st.session_state.df is None:
-        st.session_state.df = load_data(st.session_state.user)
-
-    last_weight = 230.0 if st.session_state.df.empty else st.session_state.df["weight_lbs"].iloc[-1]
-
-    default_date = st.session_state.pop("log_for_date", None)
-    if "log_for_date" not in st.session_state:
-        st.session_state.log_for_date = default_date or datetime.today().date()
-    elif st.session_state.log_for_date > datetime.today().date():
-        st.session_state.log_for_date = datetime.today().date()
+    last_weight = 180.0 if df.empty else df["weight_lbs"].iloc[-1]
+    log_date = st.session_state.pop("log_for_date", datetime.today().date())
 
     with st.form("log_form"):
-        date = st.date_input("Date", value=st.session_state.log_for_date)
+        date = st.date_input("Date", value=log_date)
         weight = st.text_input("Weight (lbs)", str(last_weight))
         time = st.text_input("Time (min)", "")
         col1, col2 = st.columns([3, 2])
@@ -383,7 +359,6 @@ elif st.session_state.page == "log":
         if date > datetime.today().date():
             st.error("🚫 Cannot log a workout in the future.")
         else:
-            st.session_state.log_for_date = date
             w = parse_float(weight, "Weight")
             t = parse_float(time, "Time")
             d = parse_float(distance, "Distance")
@@ -397,9 +372,8 @@ elif st.session_state.page == "log":
                 time_hr = t / 60
                 MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
                 kcal = MET * w_kg * time_hr
-                parsed_date = pd.to_datetime(date)
                 new_row = {
-                    "date": parsed_date.strftime("%Y-%m-%d"),
+                    "date": date,
                     "weight_lbs": w,
                     "time_min": t,
                     "distance_km": dist_km,
@@ -408,20 +382,19 @@ elif st.session_state.page == "log":
                     "calories": round(kcal, 2),
                     "user": st.session_state.user
                 }
-                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.df["date"] = pd.to_datetime(st.session_state.df["date"], errors="coerce")
-                save_data(st.session_state.user, st.session_state.df)
+                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                df["date"] = pd.to_datetime(df["date"], errors="coerce")
+                save_data(st.session_state.user, df)
+                st.session_state.df = df
                 st.success("✅ Workout saved!")
                 st.session_state.page = "home"
                 st.rerun()
 
-# ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
     if st.button("🏠 Home"):
         st.session_state.page = "home"
         st.rerun()
-
     if df.empty:
         st.info("No data yet.")
     else:
@@ -429,21 +402,11 @@ elif st.session_state.page == "progress":
         current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
         current_bmi = (current_weight * 0.453592) / (height_m ** 2)
         target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
-        to_lose = current_weight - target_weight
 
         current_month = st.session_state.selected_month
         df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
         prev_month = current_month - relativedelta(months=1)
         df_prev = df[df["date"].dt.strftime("%Y-%m") == prev_month.strftime("%Y-%m")]
-
-        def stat_delta(current, previous):
-            if previous == 0: return ""
-            if current > previous:
-                return f"<span style='color:green'>↑ {current - previous:.2f}</span>"
-            elif current < previous:
-                return f"<span style='color:red'>↓ {previous - current:.2f}</span>"
-            else:
-                return ""
 
         goal_km = settings["goal_km"]
         total_km = df_month["distance_km"].sum()
@@ -451,18 +414,22 @@ elif st.session_state.page == "progress":
         total_kcal = df_month["calories"].sum()
         avg_speed = total_km / (total_min / 60) if total_min else 0
         workout_days = df_month["date"].dt.date.nunique()
-        duration = str(timedelta(minutes=int(total_min)))
 
         total_km_prev = df_prev["distance_km"].sum()
         total_min_prev = df_prev["time_min"].sum()
         total_kcal_prev = df_prev["calories"].sum()
         avg_speed_prev = total_km_prev / (total_min_prev / 60) if total_min_prev else 0
         workout_days_prev = df_prev["date"].dt.date.nunique()
-        duration_prev = str(timedelta(minutes=int(total_min_prev)))
 
+        def stat_delta(current, previous):
+            if previous == 0: return ""
+            if current > previous: return f"<span style='color:green'>↑ {current - previous:.2f}</span>"
+            elif current < previous: return f"<span style='color:red'>↓ {previous - current:.2f}</span>"
+            return ""
+
+        st.markdown(f"<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
         percent = min(total_km / goal_km, 1.0)
-        st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km out of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
         st.markdown(f"""
             <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
               <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
@@ -472,32 +439,29 @@ elif st.session_state.page == "progress":
         """, unsafe_allow_html=True)
 
         st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:20px;'>📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:20px;'>⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:20px;'>🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs</div>", unsafe_allow_html=True)
+        st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
+        st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
+        st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
 
         st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
         col_curr, col_prev = st.columns(2)
-
         with col_curr:
-            st.markdown("<div style='font-size:20px;'><strong>This Month</strong></div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🏋️ Workouts: {len(df_month)}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🗓️ Active Days: {workout_days}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🛣️ Distance: {total_km:.2f} km</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>⏱️ Duration: {duration}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🔥 Calories: {total_kcal:.0f} kcal</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🚀 Avg Speed: {avg_speed:.2f} km/h</div>", unsafe_allow_html=True)
-
+            st.markdown("#### This Month")
+            st.markdown(f"🏋️ Workouts: {len(df_month)}")
+            st.markdown(f"🗓️ Active Days: {workout_days}")
+            st.markdown(f"🛣️ Distance: {total_km:.2f} km")
+            st.markdown(f"⏱️ Duration: {total_min:.0f} min")
+            st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
+            st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
         with col_prev:
-            st.markdown(f"<div style='font-size:20px;'><strong>Last Month</strong></div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>⏱️ {duration_prev}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:20px;'>🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}</div>", unsafe_allow_html=True)
+            st.markdown("#### Last Month")
+            st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}")
+            st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}")
+            st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}")
+            st.markdown(f"⏱️ {total_min_prev:.0f} min")
+            st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}")
+            st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}")
 
-# ─── Settings Page ───
 elif st.session_state.page == "settings":
     st.title("⚙️ Settings & Data")
     if st.button("🏠 Home"):
@@ -541,5 +505,3 @@ elif st.session_state.page == "settings":
         })
         save_settings(st.session_state.user, settings)
         st.success("✅ Settings updated!")
-
-
