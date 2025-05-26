@@ -32,9 +32,10 @@ if "\\n" in gcp_info["private_key"]:
     gcp_info["private_key"] = gcp_info["private_key"].replace("\\n", "\n")
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
+
 try:
     sheet = gc.open_by_key(SHEET_ID)
-    except Exception as e:
+except Exception as e:
     st.error(f"❌ Could not open Google Sheet: {e}")
     st.stop()
 
