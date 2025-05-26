@@ -293,9 +293,10 @@ if st.session_state.page == "home":
     ''', unsafe_allow_html=True)
 
     if clicked:
-        st.session_state.selected_day = day  # Always remember what was clicked
-    if has_workout:
-        st.rerun()
+        if has_workout:
+            if st.session_state.selected_day != day:
+            st.session_state.selected_day = day
+            st.rerun()
     else:
         st.session_state.log_for_date = day
         st.session_state.page = "log"
