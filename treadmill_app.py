@@ -246,7 +246,10 @@ if st.session_state.page == "home":
     all_dates = [grid_start + timedelta(days=i) for i in range((grid_end - grid_start).days + 1)]
 
     weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
-    for week in weeks:
+    today = datetime.today().date()
+today_class = "today-button-highlight"
+
+for week in weeks:
     cols = st.columns(7)
     for i, day in enumerate(week):
         in_current_month = day.month == current_month.month
@@ -254,7 +257,7 @@ if st.session_state.page == "home":
         is_selected = (st.session_state.selected_day == day)
         has_workout = not df[df["date"].dt.date == day].empty
 
-        # Colors
+        # Visuals
         bg_color = (
             "#FFD700" if is_today else
             (BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc"))
@@ -262,6 +265,7 @@ if st.session_state.page == "home":
         text_color = "#000000" if is_today else ("#555555" if not in_current_month else TEXT_COLOR)
         border = "3px solid #2196f3" if is_today else "2px solid #64b5f6"
         box_shadow = "0 0 10px 3px #00BFFF" if is_today else "none"
+        css_class = today_class if is_today else f"day-{day}"
 
         emoji = "🔥" if has_workout else ""
         btn_label = f"{day.day} {emoji}"
@@ -269,23 +273,33 @@ if st.session_state.page == "home":
         with cols[i]:
             clicked = st.button(btn_label, key=f"day_{day}")
 
+            # Inject unique style per button
             st.markdown(f'''
                 <style>
+                .{today_class} {{
+                    background-color: #FFD700 !important;
+                    color: #000000 !important;
+                    border: 3px solid #2196f3 !important;
+                    box-shadow: 0 0 10px 3px #00BFFF !important;
+                    font-weight: bold !important;
+                }}
                 [data-testid="stButton"][key="day_{day}"] button {{
                     background-color: {bg_color};
                     color: {text_color};
                     border: {border};
-                    box-shadow: {box_shadow};
-                    font-weight: bold;
                     font-size: 16px;
                     padding: 12px 0;
                     border-radius: 10px;
                     width: 100%;
                     height: 48px;
                     text-align: center;
+                    box-shadow: {box_shadow};
                 }}
                 </style>
             ''', unsafe_allow_html=True)
+
+            # Wrap the button to apply the class
+            st.markdown(f'<div class="{css_class}"></div>', unsafe_allow_html=True)
 
             if clicked:
                 if has_workout:
@@ -295,6 +309,7 @@ if st.session_state.page == "home":
                     st.session_state.log_for_date = day
                     st.session_state.page = "log"
                     st.rerun()
+
 
 
     if st.session_state.selected_day:
