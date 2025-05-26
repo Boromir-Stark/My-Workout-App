@@ -244,7 +244,7 @@ if st.session_state.page == "home":
     all_dates = [grid_start + timedelta(days=i) for i in range((grid_end - grid_start).days + 1)]
 
     weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
-        for week in weeks:
+    for week in weeks:
         cols = st.columns(7)
         for i, day in enumerate(week):
             in_current_month = day.month == current_month.month
