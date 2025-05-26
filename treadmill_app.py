@@ -247,9 +247,9 @@ if st.session_state.page == "home":
 
     weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
     today = datetime.today().date()
-today_class = "today-button-highlight"
+    today_class = "today-button-highlight"
 
-for week in weeks:
+    for week in weeks:
     cols = st.columns(7)
     for i, day in enumerate(week):
         in_current_month = day.month == current_month.month
