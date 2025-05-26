@@ -291,10 +291,9 @@ if st.session_state.page == "home":
         }}
         </style>
     ''', unsafe_allow_html=True)
-
     if clicked:
-        if has_workout:
-            if st.session_state.selected_day != day:
+    if has_workout:
+        if st.session_state.selected_day != day:
             st.session_state.selected_day = day
             st.rerun()
     else:
