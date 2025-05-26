@@ -67,13 +67,29 @@ def load_data(user_id):
 
 def save_data(user_id, df):
     try:
+        df = df.copy()
         df["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
         existing = pd.DataFrame(ws.get_all_records())
-        existing = existing[existing["user"] != user_id] if not existing.empty else pd.DataFrame()
+
+        if not existing.empty:
+            existing = existing[existing["user"] != user_id]
+
         full = pd.concat([existing, df], ignore_index=True)
+
+        # 🔧 Fix: Convert all datetime columns to strings
+        for col in full.columns:
+            if full[col].dtype == "datetime64[ns]":
+                full[col] = full[col].dt.strftime("%Y-%m-%d")
+            elif full[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
+                full[col] = full[col].apply(lambda x: x.strftime("%Y-%m-%d") if isinstance(x, pd.Timestamp) else x)
+
+        # ✅ Save to Google Sheets
         ws.clear()
-        # Convert all Timestamp or datetime objects to ISO string
+        ws.update([full.columns.tolist()] + full.values.tolist())
+
+    except Exception as e:
+        st.error(f"Workout Save Error: {e}")
 full = full.copy()
 for col in full.columns:
     if full[col].dtype == "datetime64[ns]":
