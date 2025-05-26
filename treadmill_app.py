@@ -13,7 +13,7 @@ import json
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
 
 LOGO_FILE = "app_logo.png"
-SHEET_ID = "1beo7KZ7eDUl8tfK5DqZ0JMYiGuWApMIoVCarljUhCBo"  # ← your actual sheet ID
+SHEET_ID = "1beo7KZ7eDUl8tfK5DqZ0JMYiGuWApMIoVCarljUhCBo"
 WORKOUT_TAB = "workouts"
 SETTINGS_TAB = "settings"
 TARGET_BMI = 24.9
@@ -23,7 +23,7 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
-# ─── Google Sheets Auth from Secrets ───
+# ─── Google Sheets Auth (Secrets-based) ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 gcp_info = dict(st.secrets["gcp"])
 if "\\n" in gcp_info["private_key"]:
@@ -31,7 +31,8 @@ if "\\n" in gcp_info["private_key"]:
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
-sheet = gc.open_by_key(SHEET_ID)  
+sheet = gc.open_by_key(SHEET_ID)
+
 # ─── Session Init ───
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -43,12 +44,6 @@ if "user" not in st.session_state:
     st.session_state.user = "Default"
 if "df" not in st.session_state:
     st.session_state.df = None
-
-# ─── Google Sheets Connection ───
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name(GCP_CREDENTIALS_FILE, scope)
-gc = gspread.authorize(creds)
-sheet = gc.open(SHEET_NAME)
 
 # ─── Google Sheets Helpers ───
 def load_data(user_id):
@@ -81,7 +76,6 @@ def load_settings(user_id):
         for row in records:
             if row["user"] == user_id:
                 return row
-        # If new user, create default
         default = {
             "user": user_id,
             "name": user_id,
@@ -123,6 +117,7 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except:
         return []
+
 
 # ─── User Selection ───
 user_list = get_all_users_with_names()
