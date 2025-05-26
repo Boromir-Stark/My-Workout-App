@@ -362,7 +362,7 @@ elif st.session_state.page == "log":
             t = parse_float(time, "Time")
             d = parse_float(distance, "Distance")
             vert = parse_float(vertical, "Vertical Distance")
-            if None in [w, t, d, vert]:
+            if None in [w, t, d]:
                 st.error("❌ Please fix the inputs.")
             else:
                 dist_km = d * 1.60934 if unit == "miles" else d
@@ -372,6 +372,11 @@ elif st.session_state.page == "log":
                 cal_flat = MET * w_kg * time_hr
                 vertical_m = vert * 0.3048  # convert feet to meters
                 cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184  # climbing calories
+                if vert is not None:
+                vertical_m = vert * 0.3048  # convert feet to meters
+                cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
+            else:
+                cal_climb = 0
                 kcal = cal_flat + cal_climb
                 parsed_date = pd.to_datetime(date)
                 new_row = {
