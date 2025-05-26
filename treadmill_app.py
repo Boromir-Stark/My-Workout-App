@@ -194,7 +194,7 @@ if st.session_state.page == "home":
         weekly_count = df_week["date"].dt.date.nunique()
     except Exception:
         weekly_count = 0
-    weekly_goal = settings.get("weekly_goal", 5)
+        weekly_goal = settings.get("weekly_goal", 5)
 
     def get_week_color(count):
         if count == 0: return "#8B0000"
