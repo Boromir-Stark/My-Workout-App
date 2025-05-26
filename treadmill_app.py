@@ -318,19 +318,20 @@ if st.session_state.page == "home":
 
 # ─── Log Workout Page ───
 elif st.session_state.page == "log":
-    with st.form("log_form"):
-        st.title("🏋️ Log Workout")
-        if st.button("🏠 Home"):
-            st.session_state.page = "home"
-            st.rerun()
+    st.title("🏋️ Log Workout")
 
+    # This button must be outside the form!
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+        st.rerun()
+
+    with st.form("log_form"):
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today().date()))
         weight = st.text_input("Weight (lbs)")
         time = st.text_input("Time (min)")
         distance = st.text_input("Distance")
         unit = st.radio("Distance Unit", ["miles", "km"], horizontal=True, index=0)
         vertical = st.text_input("Vertical Distance (ft)")
-
         submitted = st.form_submit_button("Save Workout")
 
     def parse_float(val, label):
