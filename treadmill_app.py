@@ -32,7 +32,6 @@ if "\\n" in gcp_info["private_key"]:
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
 sheet = gc.open_by_key(SHEET_ID)
-st.success("✅ Connected to Google Sheet: Workout Data")
 
 # ─── Session Init ───
 if "page" not in st.session_state:
@@ -69,7 +68,7 @@ def save_data(user_id, df):
             existing = existing[existing["user"] != user_id]
         full = pd.concat([existing, df], ignore_index=True)
 
-        # 🔧 Fix Timestamp serialization
+        # Fix Timestamp serialization
         for col in full.columns:
             if full[col].dtype == "datetime64[ns]":
                 full[col] = full[col].dt.strftime("%Y-%m-%d")
@@ -80,7 +79,8 @@ def save_data(user_id, df):
         ws.update([full.columns.tolist()] + full.values.tolist())
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
-        def load_settings(user_id):
+
+def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
         records = ws.get_all_records()
@@ -129,7 +129,6 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except:
         return []
-
 # ─── Logo Display ───
 if os.path.exists(LOGO_FILE):
     with open(LOGO_FILE, "rb") as img_file:
@@ -180,6 +179,21 @@ settings = load_settings(st.session_state.user)
 theme = settings.get("theme", "dark")
 df = load_data(st.session_state.user) if st.session_state.df is None else st.session_state.df
 
+# ─── Navigation Buttons ───
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("🏋️ Log Workout"):
+        st.session_state.page = "log"
+        st.rerun()
+with col2:
+    if st.button("📊 Progress"):
+        st.session_state.page = "progress"
+        st.rerun()
+with col3:
+    if st.button("⚙️ Settings"):
+        st.session_state.page = "settings"
+        st.rerun()
+
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
@@ -215,117 +229,7 @@ if st.session_state.page == "home":
             Weekly Workouts: <span style="color:{get_week_color(weekly_count)}; font-weight:bold;">{weekly_count}</span> / {weekly_goal}
         </div>
     """, unsafe_allow_html=True)
-    # Monthly Calendar Nav
-    nav1, nav2, nav3 = st.columns([1, 5, 1])
-    with nav1:
-        if st.button("◀️"):
-            st.session_state.selected_month -= relativedelta(months=1)
-            st.session_state.selected_day = None
-            st.rerun()
-    with nav3:
-        if st.button("▶️"):
-            st.session_state.selected_month += relativedelta(months=1)
-            st.session_state.selected_day = None
-            st.rerun()
-    with nav2:
-        st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
-
-    first_day = current_month
-    _, last_day = monthrange(first_day.year, first_day.month)
-    dates = [first_day + timedelta(days=i) for i in range(last_day)]
-    days_grid = [[] for _ in range(6)]
-    start_wkday = first_day.weekday()
-    week_idx = 0
-    for _ in range(start_wkday):
-        days_grid[week_idx].append(None)
-    for date in dates:
-        days_grid[week_idx].append(date.date())
-        if len(days_grid[week_idx]) == 7:
-            week_idx += 1
-
-    for week in days_grid:
-        if not week:
-            continue
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            if day:
-                is_today = (day == today)
-                is_selected = (st.session_state.selected_day == day)
-                has_workout = not df[df["date"].dt.strftime("%Y-%m-%d") == str(day)].empty
-                bg_color = BG_WORKOUT if has_workout else BG_EMPTY
-                emoji = "🔥" if has_workout else ""
-                border = "2px solid #64b5f6"
-                glow = "0 0 10px #00BFFF" if is_today else ""
-                box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
-
-                with cols[i]:
-                    btn_label = f"{day.day} {emoji}"
-                    clicked = st.button(btn_label, key=f"day_{day}")
-                    st.markdown(
-                        f"""
-                        <style>
-                        [data-testid="stButton"][key="day_{day}"] button {{
-                            background-color: {bg_color};
-                            color: {TEXT_COLOR};
-                            border: {border};
-                            {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
-                            font-weight: bold;
-                            font-size: 16px;
-                            padding: 12px 0;
-                            border-radius: 10px;
-                            width: 100%;
-                            height: 48px;
-                            text-align: center;
-                        }}
-                        </style>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    if clicked:
-                        if has_workout:
-                            st.session_state.selected_day = day
-                            st.rerun()
-                        else:
-                            st.session_state.log_for_date = day
-                            st.session_state.page = "log"
-                            st.rerun()
-            else:
-                cols[i].markdown(" ")
-
-    # Daily Summary
-    if st.session_state.selected_day:
-        st.markdown("---")
-        selected = st.session_state.selected_day
-        match = df[df["date"].dt.date == selected]
-        if not match.empty:
-            row = match.iloc[0]
-            st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
-            st.markdown(f"- Duration: `{row['time_min']} min`")
-            st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
-            st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
-        else:
-            st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
-            if st.button("Log Workout for this Day"):
-                st.session_state.log_for_date = selected
-                st.session_state.page = "log"
-                st.rerun()
-
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("🏋️ Log Workout"):
-            st.session_state.page = "log"
-            st.rerun()
-    with col2:
-        if st.button("📊 Progress"):
-            st.session_state.page = "progress"
-            st.rerun()
-    with col3:
-        if st.button("⚙️ Settings"):
-            st.session_state.page = "settings"
-            st.rerun()
-
-# ─── Workout Logging Page ───
+# ─── Log Workout Page ───
 elif st.session_state.page == "log":
     st.title("🏋️ Log Workout")
     if st.button("🏠 Home"):
@@ -333,10 +237,10 @@ elif st.session_state.page == "log":
         st.rerun()
 
     last_weight = 180.0 if df.empty else df["weight_lbs"].iloc[-1]
-    log_date = st.session_state.pop("log_for_date", datetime.today().date())
+    default_date = st.session_state.pop("log_for_date", datetime.today().date())
 
     with st.form("log_form"):
-        date = st.date_input("Date", value=log_date)
+        date = st.date_input("Date", value=default_date)
         weight = st.text_input("Weight (lbs)", str(last_weight))
         time = st.text_input("Time (min)", "")
         col1, col2 = st.columns([3, 2])
@@ -390,6 +294,7 @@ elif st.session_state.page == "log":
                 st.session_state.page = "home"
                 st.rerun()
 
+# ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
     if st.button("🏠 Home"):
@@ -402,6 +307,7 @@ elif st.session_state.page == "progress":
         current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
         current_bmi = (current_weight * 0.453592) / (height_m ** 2)
         target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
+        to_lose = current_weight - target_weight
 
         current_month = st.session_state.selected_month
         df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
@@ -462,6 +368,7 @@ elif st.session_state.page == "progress":
             st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}")
             st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}")
 
+# ─── Settings Page ───
 elif st.session_state.page == "settings":
     st.title("⚙️ Settings & Data")
     if st.button("🏠 Home"):
