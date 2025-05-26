@@ -267,13 +267,12 @@ if st.session_state.page == "home":
             box_shadow = "0 0 10px 3px #00BFFF" if is_today else "none"
 
             emoji = "🔥" if has_workout else ""
-            btn_label = f"{day.day} {emoji}"
+            btn_label = f"{day.day} {'📍' if is_today else ''} {emoji}"
+
 
             with cols[i]:
                 clicked = st.button(btn_label, key=f"day_{day}")
-                if is_today:
-                    st.markdown("<div style='text-align:center; color:#FFD700; font-weight:bold;'>📍 Today</div>", unsafe_allow_html=True)
-
+                
                 # Inject per-day button styling
     st.markdown(f'''
         <style>
