@@ -318,37 +318,36 @@ if st.session_state.page == "home":
 
 # ─── Log Workout Page ───
 elif st.session_state.page == "log":
-    st.title("🏋️ Log Workout")
-
-    # This button must be outside the form!
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-        st.rerun()
-
     with st.form("log_form"):
-        date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today().date()))
+        st.title("🏋️ Log Workout")
+        if st.form_submit_button("🏠 Home"):
+            st.session_state.page = "home"
+            st.rerun()
+
+        date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         weight = st.text_input("Weight (lbs)")
         time = st.text_input("Time (min)")
-        distance = st.text_input("Distance")
-        unit = st.radio("Distance Unit", ["miles", "km"], horizontal=True, index=0)
-        vertical = st.text_input("Vertical Distance (ft)")
-        submitted = st.form_submit_button("Save Workout")
 
-    def parse_float(val, label):
-        try:
-            return float(val)
-        except ValueError:
-            st.warning(f"Invalid {label}")
-            return None
+        # Inline distance + unit selector
+        distance_col1, distance_col2 = st.columns([3, 1])
+        with distance_col1:
+            distance = st.text_input("Distance")
+        with distance_col2:
+            unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
+
+        vertical = st.text_input("Vertical Distance (ft)")
+
+        submitted = st.form_submit_button("Save Workout")
 
     if submitted:
         if date > datetime.today().date():
             st.error("🚫 Cannot log a workout in the future.")
         else:
+            st.session_state.log_for_date = date
             w = parse_float(weight, "Weight")
             t = parse_float(time, "Time")
             d = parse_float(distance, "Distance")
-            vert = parse_float(vertical, "Vertical Distance") if vertical.strip() else None
+            vert = parse_float(vertical, "Vertical Distance", required=False)
 
             if None in [w, t, d]:
                 st.error("❌ Please fix the inputs.")
@@ -359,15 +358,17 @@ elif st.session_state.page == "log":
                 MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
                 cal_flat = MET * w_kg * time_hr
 
+                # Only add climbing calories if vertical is provided
                 cal_climb = 0
                 if vert is not None:
-                    vertical_m = vert * 0.3048  # feet to meters
+                    vertical_m = vert * 0.3048
                     cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
 
                 kcal = cal_flat + cal_climb
 
+                parsed_date = pd.to_datetime(date)
                 new_row = {
-                    "date": date.strftime("%Y-%m-%d"),
+                    "date": parsed_date.strftime("%Y-%m-%d"),
                     "weight_lbs": w,
                     "time_min": t,
                     "distance_km": dist_km,
@@ -376,11 +377,9 @@ elif st.session_state.page == "log":
                     "user": st.session_state.user
                 }
 
-                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
-                save_data(st.session_state.user, st.session_state.df)
+                df_new = pd.DataFrame([new_row])
+                save_data(st.session_state.user, df_new)
                 st.success("✅ Workout saved!")
-                st.session_state.page = "home"
-                st.rerun()
                 # ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
