@@ -8,6 +8,7 @@ from uuid import uuid4
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+import os
 
 # ─── App Setup ───
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
