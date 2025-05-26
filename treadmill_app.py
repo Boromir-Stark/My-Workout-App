@@ -186,31 +186,35 @@ if st.session_state.page == "home":
     current_month = st.session_state.selected_month
 
     # Weekly Tracker
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
-    try:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
-        df_week = df[(df["date"].dt.date >= start_of_week) & (df["date"].dt.date <= end_of_week)]
-        weekly_count = df_week["date"].dt.date.nunique()
-    except Exception:
-        weekly_count = 0
-        weekly_goal = settings.get("weekly_goal", 5)
+start_of_week = today - timedelta(days=today.weekday())
+end_of_week = start_of_week + timedelta(days=6)
 
-    def get_week_color(count):
-        if count == 0: return "#8B0000"
-        elif count == 1: return "#B22222"
-        elif count == 2: return "#B8860B"
-        elif count == 3: return "#FFD700"
-        elif count == 4: return "#228B22"
-        elif count == 5: return "#1E90FF"
-        else: return "#800080"
+try:
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df_week = df[(df["date"].dt.date >= start_of_week) & (df["date"].dt.date <= end_of_week)]
+    weekly_count = df_week["date"].dt.date.nunique()
+except Exception:
+    weekly_count = 0
 
-    st.markdown(f"""
-        <div style="text-align:center; font-size:26px; font-weight:bold; color:#87F3F8; margin-bottom:12px;">
-            Weekly Workouts:
-            <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
-        </div>
-    """, unsafe_allow_html=True)
+weekly_goal = settings.get("weekly_goal", 5)
+
+def get_week_color(count):
+    if count == 0: return "#8B0000"
+    elif count == 1: return "#B22222"
+    elif count == 2: return "#B8860B"
+    elif count == 3: return "#FFD700"
+    elif count == 4: return "#228B22"
+    elif count == 5: return "#1E90FF"
+    else: return "#800080"
+
+# Then the markdown
+st.markdown(f"""
+    <div style="text-align:center; font-size:26px; font-weight:bold; color:#87F3F8; margin-bottom:12px;">
+        Weekly Workouts:
+        <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
+    </div>
+""", unsafe_allow_html=True)
+
 
     df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
 
