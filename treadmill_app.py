@@ -31,15 +31,10 @@ if "\\n" in gcp_info["private_key"]:
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
+sheet = gc.open_by_key(SHEET_ID)
+st.success("✅ Connected to Google Sheet: " + sheet.title)
 
-try:
-    sheet = gc.open_by_key(SHEET_ID)
-    st.success("✅ Connected to Google Sheet: " + sheet.title)
-except Exception as e:
-    st.error(f"❌ Could not open Google Sheet: {e}")
-    st.stop()  # stop the app if the sheet can't be opened
-
-# ─── Session Init ───
+# ─── Session State Init ───
 if "page" not in st.session_state:
     st.session_state.page = "home"
 if "selected_month" not in st.session_state:
@@ -52,6 +47,15 @@ if "df" not in st.session_state:
     st.session_state.df = None
 
 # ─── Google Sheets Helpers ───
+@st.cache_data(ttl=60)
+def get_all_users_with_names():
+    try:
+        records = sheet.worksheet(SETTINGS_TAB).get_all_records()
+        return [(r["user"], r.get("name", r["user"])) for r in records]
+    except:
+        return []
+
+@st.cache_data(ttl=60)
 def load_data(user_id):
     try:
         data = sheet.worksheet(WORKOUT_TAB).get_all_records()
@@ -75,6 +79,7 @@ def save_data(user_id, df):
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
 
+@st.cache_data(ttl=60)
 def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -108,6 +113,7 @@ def load_settings(user_id):
 
 def save_settings(user_id, settings):
     try:
+        settings["user"] = user_id  # ✅ Fix: Ensure 'user' field is set
         ws = sheet.worksheet(SETTINGS_TAB)
         existing = pd.DataFrame(ws.get_all_records())
         existing = existing[existing["user"] != user_id]
@@ -116,16 +122,7 @@ def save_settings(user_id, settings):
         ws.update([combined.columns.tolist()] + combined.values.tolist())
     except Exception as e:
         st.error(f"Settings Save Error: {e}")
-
-def get_all_users_with_names():
-    try:
-        records = sheet.worksheet(SETTINGS_TAB).get_all_records()
-        return [(r["user"], r.get("name", r["user"])) for r in records]
-    except:
-        return []
-
-
-# ─── User Selection ───
+# ─── User Selector ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
 display_names = [name for _, name in user_list]
@@ -172,6 +169,7 @@ if os.path.exists(LOGO_FILE):
         st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
+
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
@@ -321,6 +319,7 @@ elif st.session_state.page == "log":
         st.session_state.df = load_data(st.session_state.user)
 
     last_weight = 230.0 if st.session_state.df.empty else st.session_state.df["weight_lbs"].iloc[-1]
+
     default_date = st.session_state.pop("log_for_date", None)
     if "log_for_date" not in st.session_state:
         st.session_state.log_for_date = default_date or datetime.today().date()
@@ -373,8 +372,7 @@ elif st.session_state.page == "log":
                     "distance_km": dist_km,
                     "incline": inc,
                     "vertical_feet": vert,
-                    "calories": round(kcal, 2),
-                    "user": st.session_state.user
+                    "calories": round(kcal, 2)
                 }
                 st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.df["date"] = pd.to_datetime(st.session_state.df["date"], errors="coerce")
@@ -482,20 +480,22 @@ elif st.session_state.page == "settings":
     st.markdown("### 🗂️ Manage Workout Logs")
     logs = load_data(st.session_state.user)
     if not logs.empty:
-        logs["date_str"] = logs["date"].dt.strftime("%B %d, %Y")
-        selected_log = st.selectbox("Select Workout to Delete", logs["date_str"].tolist())
+        log_dates = logs["date"].dt.strftime("%B %d, %Y").tolist()
+        selected_log = st.selectbox("Select Workout to Delete", log_dates)
         if st.button("Delete Selected Workout"):
-            log_date = logs[logs["date_str"] == selected_log]["date"].iloc[0]
-            logs = logs[logs["date"] != log_date]
-            logs.drop(columns=["date_str"], inplace=True)
-            save_data(st.session_state.user, logs)
-            st.success(f"✅ Workout on {selected_log} deleted.")
+            log_to_delete = logs[logs["date"].dt.strftime("%B %d, %Y") == selected_log]
+            if not log_to_delete.empty:
+                log_date = log_to_delete["date"].iloc[0]
+                logs = logs[logs["date"] != log_date]
+                save_data(st.session_state.user, logs)
+                st.success(f"✅ Workout on {selected_log} deleted.")
+            else:
+                st.warning("No workout found for this date.")
     else:
         st.info("No workouts logged yet.")
 
     if st.button("Save Settings"):
-        updated = {
-            "user": st.session_state.user,
+        settings.update({
             "name": st.session_state.new_name,
             "goal_km": goal_km,
             "weekly_goal": weekly_goal,
@@ -503,6 +503,6 @@ elif st.session_state.page == "settings":
             "birth_year": birth_year,
             "gender": gender,
             "theme": theme_choice.lower()
-        }
-        save_settings(st.session_state.user, updated)
+        })
+        save_settings(st.session_state.user, settings)
         st.success("✅ Settings updated!")
