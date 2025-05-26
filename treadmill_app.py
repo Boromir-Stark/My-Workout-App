@@ -293,6 +293,7 @@ if st.session_state.page == "home":
             st.markdown(f"- Duration: `{row['time_min']} min`")
             st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
             st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
+            st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
         else:
             st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
             if st.button("Log Workout for this Day"):
@@ -445,23 +446,32 @@ elif st.session_state.page == "progress":
         st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
 
         st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
-        col_curr, col_prev = st.columns(2)
-        with col_curr:
-            st.markdown("#### This Month")
-            st.markdown(f"🏋️ Workouts: {len(df_month)}")
-            st.markdown(f"🗓️ Active Days: {workout_days}")
-            st.markdown(f"🛣️ Distance: {total_km:.2f} km")
-            st.markdown(f"⏱️ Duration: {total_min:.0f} min")
-            st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
-            st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
-        with col_prev:
-            st.markdown("#### Last Month")
-            st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-            st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
-            st.markdown(f"⏱️ {total_min_prev:.0f} min")
-            st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
+
+# Calculate vertical feet totals
+vertical_sum = df_month["vertical_feet"].sum()
+vertical_prev = df_prev["vertical_feet"].sum()
+
+col_curr, col_prev = st.columns(2)
+with col_curr:
+    st.markdown("#### This Month")
+    st.markdown(f"🏋️ Workouts: {len(df_month)}")
+    st.markdown(f"🗓️ Active Days: {workout_days}")
+    st.markdown(f"🛣️ Distance: {total_km:.2f} km")
+    st.markdown(f"🧗 Vertical Climb: {vertical_sum:.0f} ft")
+    st.markdown(f"⏱️ Duration: {total_min:.0f} min")
+    st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
+    st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
+
+with col_prev:
+    st.markdown("#### Last Month")
+    st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
+    st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
+    st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
+    st.markdown(f"🧗 {vertical_prev:.0f} ft {stat_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
+    st.markdown(f"⏱️ {total_min_prev:.0f} min")
+    st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
+    st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
+
 
 # ─── Settings Page ───
 elif st.session_state.page == "settings":
