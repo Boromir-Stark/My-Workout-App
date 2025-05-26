@@ -224,7 +224,7 @@ if st.session_state.page == "home":
             st.rerun()
     with nav2:
         st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
-            first_day = current_month
+    first_day = current_month
     _, last_day = monthrange(first_day.year, first_day.month)
     dates = [first_day + timedelta(days=i) for i in range(last_day)]
     days_grid = [[] for _ in range(6)]
