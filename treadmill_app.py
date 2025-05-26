@@ -31,7 +31,13 @@ if "\\n" in gcp_info["private_key"]:
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
-sheet = gc.open_by_key(SHEET_ID)
+
+try:
+    sheet = gc.open_by_key(SHEET_ID)
+    st.success("✅ Connected to Google Sheet: " + sheet.title)
+except Exception as e:
+    st.error(f"❌ Could not open Google Sheet: {e}")
+    st.stop()  # stop the app if the sheet can't be opened
 
 # ─── Session Init ───
 if "page" not in st.session_state:
