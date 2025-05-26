@@ -195,7 +195,6 @@ if st.session_state.page == "home":
     except Exception:
         weekly_count = 0
     weekly_goal = settings.get("weekly_goal", 5)
-
     def get_week_color(count):
         if count == 0: return "#8B0000"
         elif count == 1: return "#B22222"
@@ -204,7 +203,6 @@ if st.session_state.page == "home":
         elif count == 4: return "#228B22"
         elif count == 5: return "#1E90FF"
         else: return "#800080"
-
     st.markdown(f"""
         <div style="text-align:center; font-size:20px; margin-bottom:12px;">
             Weekly Workouts: <span style="color:{get_week_color(weekly_count)}; font-weight:bold;">{weekly_count}</span> / {weekly_goal}
@@ -213,7 +211,6 @@ if st.session_state.page == "home":
 
     df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
 
-    # Month Nav
     nav1, nav2, nav3 = st.columns([1, 5, 1])
     with nav1:
         if st.button("◀️"):
@@ -228,82 +225,64 @@ if st.session_state.page == "home":
     with nav2:
         st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
 
-    # Weekday Headers
-    headers = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    cols = st.columns(7)
-    for i, day in enumerate(headers):
-        cols[i].markdown(f"<div style='text-align:center; font-weight:bold;'>{day}</div>", unsafe_allow_html=True)
+    # Weekday headers
+    weekday_cols = st.columns(7)
+    weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    for i in range(7):
+        weekday_cols[i].markdown(f"**{weekdays[i]}**", unsafe_allow_html=True)
 
-    # Calendar Grid
-    first_day = current_month
-    _, last_day = monthrange(first_day.year, first_day.month)
-    dates = [first_day + timedelta(days=i) for i in range(last_day)]
+    # Extended calendar days
+    first_day = datetime(current_month.year, current_month.month, 1).date()
+    _, last_day_num = monthrange(current_month.year, current_month.month)
+    last_day = datetime(current_month.year, current_month.month, last_day_num).date()
 
-    # Add padding days if next month's first days fall in same week
-    last_date = dates[-1]
-    last_wkday = last_date.weekday()
-    if last_wkday < 6:  # Fill in with next month days
-        for i in range(1, 7 - last_wkday):
-            dates.append(last_date + timedelta(days=i))
+    grid_start = first_day - timedelta(days=first_day.weekday())
+    grid_end = last_day + timedelta(days=(6 - last_day.weekday()))
+    all_dates = [grid_start + timedelta(days=i) for i in range((grid_end - grid_start).days + 1)]
 
-    days_grid = [[] for _ in range(6)]
-    start_wkday = first_day.weekday()
-    week_idx = 0
-    for _ in range(start_wkday):
-        days_grid[week_idx].append(None)
-    for date in dates:
-        days_grid[week_idx].append(date.date())
-        if len(days_grid[week_idx]) == 7:
-            week_idx += 1
-
-    for week in days_grid:
-        if not week:
-            continue
+    weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
+    for week in weeks:
         cols = st.columns(7)
         for i, day in enumerate(week):
-            if day:
-                is_today = (day == today)
-                is_selected = (st.session_state.selected_day == day)
-                has_workout = not df[df["date"].dt.date == day].empty
-                bg_color = BG_WORKOUT if has_workout else BG_EMPTY
-                emoji = "🔥" if has_workout else ""
-                border = "2px solid #64b5f6"
-                glow = "0 0 10px #00BFFF" if is_today else ""
-                box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
+            in_current_month = day.month == current_month.month
+            is_today = (day == today)
+            is_selected = (st.session_state.selected_day == day)
+            has_workout = not df[df["date"].dt.date == day].empty
+            bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
+            emoji = "🔥" if has_workout else ""
+            border = "2px solid #64b5f6"
+            glow = "0 0 10px #00BFFF" if is_today else ""
+            box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
 
-                with cols[i]:
-                    btn_label = f"{day.day} {emoji}"
-                    clicked = st.button(btn_label, key=f"day_{day}")
-                    st.markdown(f'''
-                        <style>
-                        [data-testid="stButton"][key="day_{day}"] button {{
-                            background-color: {bg_color};
-                            color: {TEXT_COLOR};
-                            border: {border};
-                            {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
-                            font-weight: bold;
-                            font-size: 16px;
-                            padding: 12px 0;
-                            border-radius: 10px;
-                            width: 100%;
-                            height: 48px;
-                            text-align: center;
-                        }}
-                        </style>
-                    ''', unsafe_allow_html=True)
-                    if clicked:
-                        match = df[df["date"].dt.date == day]
-                        if not match.empty:
-                            st.session_state.selected_day = day
-                            st.rerun()
-                        else:
-                            st.session_state.log_for_date = day
-                            st.session_state.page = "log"
-                            st.rerun()
-            else:
-                cols[i].markdown(" ")
+            with cols[i]:
+                btn_label = f"{day.day} {emoji}"
+                clicked = st.button(btn_label, key=f"day_{day}")
+                st.markdown(f'''
+                    <style>
+                    [data-testid="stButton"][key="day_{day}"] button {{
+                        background-color: {bg_color};
+                        color: {TEXT_COLOR};
+                        border: {border};
+                        {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
+                        font-weight: bold;
+                        font-size: 16px;
+                        padding: 12px 0;
+                        border-radius: 10px;
+                        width: 100%;
+                        height: 48px;
+                        text-align: center;
+                    }}
+                    </style>
+                ''', unsafe_allow_html=True)
+                if clicked:
+                    if has_workout:
+                        st.session_state.selected_day = day
+                        st.rerun()
+                    else:
+                        st.session_state.log_for_date = day
+                        st.session_state.page = "log"
+                        st.rerun()
 
-    # Summary for selected day
     if st.session_state.selected_day:
         st.markdown("---")
         selected = st.session_state.selected_day
