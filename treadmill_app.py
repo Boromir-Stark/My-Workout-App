@@ -271,34 +271,36 @@ if st.session_state.page == "home":
 
             with cols[i]:
                 clicked = st.button(btn_label, key=f"day_{day}")
+                if is_today:
+                    st.markdown("<div style='text-align:center; color:#FFD700; font-weight:bold;'>📍 Today</div>", unsafe_allow_html=True)
 
                 # Inject per-day button styling
-                st.markdown(f'''
-                    <style>
-                    [data-testid="stButton"][key="day_{day}"] button {{
-                        background-color: {bg_color} !important;
-                        color: {text_color} !important;
-                        border: {border} !important;
-                        box-shadow: {box_shadow} !important;
-                        font-weight: bold;
-                        font-size: 16px;
-                        padding: 12px 0;
-                        border-radius: 10px;
-                        width: 100%;
-                        height: 48px;
-                        text-align: center;
-                    }}
-                    </style>
-                ''', unsafe_allow_html=True)
+    st.markdown(f'''
+        <style>
+        [data-testid="stButton"][key="day_{day}"] button {{
+            background-color: {bg_color} !important;
+            color: {text_color} !important;
+            border: {border} !important;
+            box-shadow: {box_shadow} !important;
+            font-weight: bold !important;
+            font-size: 16px;
+            padding: 12px 0;
+            border-radius: 10px;
+            width: 100%;
+            height: 48px;
+            text-align: center;
+        }}
+        </style>
+    ''', unsafe_allow_html=True)
 
-                if clicked:
-                    if has_workout:
-                        st.session_state.selected_day = day
-                        st.rerun()
-                    else:
-                        st.session_state.log_for_date = day
-                        st.session_state.page = "log"
-                        st.rerun()
+    if clicked:
+        if has_workout:
+            st.session_state.selected_day = day
+            st.rerun()
+        else:
+            st.session_state.log_for_date = day
+            st.session_state.page = "log"
+            st.rerun()
 
     # Daily summary
     if st.session_state.selected_day:
