@@ -182,7 +182,7 @@ st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_all
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
-    today = datetime.today().date()
+    today = datetime.now().date()
     current_month = st.session_state.selected_month
 
     # Weekly Tracker
@@ -262,7 +262,6 @@ if st.session_state.page == "home":
             text_color = '#555555' if not in_current_month else TEXT_COLOR
 
             with cols[i]:
-                btn_label = f"{day.day} {emoji}"
                 clicked = st.button(btn_label, key=f"day_{day}")
                 st.markdown(f'''
                     <style>
