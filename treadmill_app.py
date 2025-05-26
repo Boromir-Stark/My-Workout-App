@@ -276,10 +276,10 @@ if st.session_state.page == "home":
                 st.markdown(f'''
                     <style>
                     [data-testid="stButton"][key="day_{day}"] button {{
-                        background-color: {bg_color};
-                        color: {text_color};
-                        border: {border};
-                        box-shadow: {box_shadow};
+                        background-color: {bg_color} !important;
+                        color: {text_color} !important;
+                        border: {border} !important;
+                        box-shadow: {box_shadow} !important;
                         font-weight: bold;
                         font-size: 16px;
                         padding: 12px 0;
