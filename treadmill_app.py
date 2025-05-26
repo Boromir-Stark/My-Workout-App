@@ -7,6 +7,7 @@ from calendar import monthrange
 from uuid import uuid4
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json  # needed to use st.secrets["gcp"]
 
 # ─── App Setup ───
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
@@ -22,13 +23,12 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
-# ─── Google Sheets Auth from Secrets ───
+# ─── Google Sheets Auth (from secrets) ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-gcp_info = st.secrets["gcp"]  # <- FIXED HERE
+gcp_info = st.secrets["gcp"]
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
 sheet = gc.open(SHEET_NAME)
-
 # ─── Session Init ───
 if "page" not in st.session_state:
     st.session_state.page = "home"
