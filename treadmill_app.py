@@ -24,7 +24,7 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
-# ─── Google Sheets Auth (Secrets-based) ───
+# ─── Google Sheets Auth ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 gcp_info = dict(st.secrets["gcp"])
 if "\\n" in gcp_info["private_key"]:
@@ -32,10 +32,14 @@ if "\\n" in gcp_info["private_key"]:
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
-sheet = gc.open_by_key(SHEET_ID)
-st.success("✅ Connected to Google Sheet: " + sheet.title)
+try:
+    sheet = gc.open_by_key(SHEET_ID)
+    st.success("✅ Connected to Google Sheet: " + sheet.title)
+except Exception as e:
+    st.error("❌ Could not open Google Sheet. Check access and quota.")
+    st.stop()
 
-# ─── Session State Init ───
+# ─── Session Init ───
 if "page" not in st.session_state:
     st.session_state.page = "home"
 if "selected_month" not in st.session_state:
@@ -48,19 +52,12 @@ if "df" not in st.session_state:
     st.session_state.df = None
 
 # ─── Google Sheets Helpers ───
-@st.cache_data(ttl=60)
-def get_all_users_with_names():
-    try:
-        records = sheet.worksheet(SETTINGS_TAB).get_all_records()
-        return [(r["user"], r.get("name", r["user"])) for r in records]
-    except:
-        return []
-
-@st.cache_data(ttl=60)
 def load_data(user_id):
     try:
         data = sheet.worksheet(WORKOUT_TAB).get_all_records()
         df = pd.DataFrame(data)
+        if "date" not in df.columns:
+            return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "incline", "vertical_feet", "calories", "user"])
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
         df = df[df["user"] == user_id]
         return df.dropna(subset=["date"])
@@ -80,7 +77,6 @@ def save_data(user_id, df):
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
 
-@st.cache_data(ttl=60)
 def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -114,22 +110,27 @@ def load_settings(user_id):
 
 def save_settings(user_id, settings):
     try:
-        settings["user"] = user_id  # Ensure 'user' is set
+        settings["user"] = user_id
         ws = sheet.worksheet(SETTINGS_TAB)
         existing_data = ws.get_all_records()
         existing = pd.DataFrame(existing_data)
-
         if existing.empty:
             combined = pd.DataFrame([settings])
         else:
             existing = existing[existing["user"] != user_id]
             combined = pd.concat([existing, pd.DataFrame([settings])], ignore_index=True)
-
         ws.clear()
         ws.update([combined.columns.tolist()] + combined.values.tolist())
     except Exception as e:
         st.error(f"Settings Save Error: {e}")
-# ─── User Selector ───
+
+def get_all_users_with_names():
+    try:
+        records = sheet.worksheet(SETTINGS_TAB).get_all_records()
+        return [(r["user"], r.get("name", r["user"])) for r in records]
+    except:
+        return []
+        # ─── User Selector ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
 display_names = [name for _, name in user_list]
@@ -146,7 +147,7 @@ selection = st.selectbox("👤 Select User", display_names, index=current_index,
 
 if user_ids[display_names.index(selection)] == "__new__":
     new_id = f"user_{uuid4().hex[:6]}"
-    save_settings(new_id, {
+    default_settings = {
         "user": new_id,
         "name": new_id,
         "goal_km": 100,
@@ -155,7 +156,8 @@ if user_ids[display_names.index(selection)] == "__new__":
         "theme": "dark",
         "gender": "Male",
         "weekly_goal": 5
-    })
+    }
+    save_settings(new_id, default_settings)
     st.session_state.user = new_id
     st.success("✅ New user created! Please rename in ⚙️ Settings.")
     st.session_state.df = None
@@ -166,8 +168,8 @@ else:
     st.session_state.user = user_ids[display_names.index(selection)]
 
 settings = load_settings(st.session_state.user)
-theme = settings.get("theme", "dark")
 df = load_data(st.session_state.user) if st.session_state.df is None else st.session_state.df
+df["date"] = pd.to_datetime(df["date"], errors="coerce")  # ensure always usable with .dt
 
 # ─── Logo ───
 if os.path.exists(LOGO_FILE):
@@ -205,7 +207,6 @@ if st.session_state.page == "home":
         </div>
     """, unsafe_allow_html=True)
 
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
 
     nav1, nav2, nav3 = st.columns([1, 5, 1])
@@ -315,7 +316,7 @@ if st.session_state.page == "home":
         if st.button("⚙️ Settings"):
             st.session_state.page = "settings"
             st.rerun()
-# ─── Log Workout Page ───
+            # ─── Log Workout Page ───
 elif st.session_state.page == "log":
     st.title("🏋️ Log Workout")
     if st.button("🏠 Home"):
@@ -379,7 +380,8 @@ elif st.session_state.page == "log":
                     "distance_km": dist_km,
                     "incline": inc,
                     "vertical_feet": vert,
-                    "calories": round(kcal, 2)
+                    "calories": round(kcal, 2),
+                    "user": st.session_state.user
                 }
                 st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
                 st.session_state.df["date"] = pd.to_datetime(st.session_state.df["date"], errors="coerce")
@@ -394,6 +396,7 @@ elif st.session_state.page == "progress":
     if st.button("🏠 Home"):
         st.session_state.page = "home"
         st.rerun()
+
     if df.empty:
         st.info("No data yet.")
     else:
@@ -513,3 +516,5 @@ elif st.session_state.page == "settings":
         })
         save_settings(st.session_state.user, settings)
         st.success("✅ Settings updated!")
+
+
