@@ -13,7 +13,7 @@ import json
 st.set_page_config(page_title="My Workout Tracker", layout="centered")
 
 LOGO_FILE = "app_logo.png"
-SHEET_NAME = "Workout Data"
+SHEET_ID = "1beo7KZ7eDUl8tfK5DqZ0JMYiGuWApMIoVCarljUhCBo"  # ← your actual sheet ID
 WORKOUT_TAB = "workouts"
 SETTINGS_TAB = "settings"
 TARGET_BMI = 24.9
@@ -23,17 +23,15 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
-# ─── Google Sheets Auth (from Streamlit Secrets) ───
+# ─── Google Sheets Auth from Secrets ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-
-# Safely copy and fix the private key
 gcp_info = dict(st.secrets["gcp"])
 if "\\n" in gcp_info["private_key"]:
     gcp_info["private_key"] = gcp_info["private_key"].replace("\\n", "\n")
 
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
-sheet = gc.open(SHEET_NAME)
+sheet = gc.open_by_key(SHEET_ID)  
 # ─── Session Init ───
 if "page" not in st.session_state:
     st.session_state.page = "home"
