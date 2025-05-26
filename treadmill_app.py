@@ -353,47 +353,45 @@ elif st.session_state.page == "log":
             st.warning(f"Invalid {label}")
             return None
 
-    if submitted:
-        if date > datetime.today().date():
-            st.error("🚫 Cannot log a workout in the future.")
+if submitted:
+    if date > datetime.today().date():
+        st.error("🚫 Cannot log a workout in the future.")
+    else:
+        st.session_state.log_for_date = date
+        w = parse_float(weight, "Weight")
+        t = parse_float(time, "Time")
+        d = parse_float(distance, "Distance")
+        vert = parse_float(vertical, "Vertical Distance")
+        if None in [w, t, d]:
+            st.error("❌ Please fix the inputs.")
         else:
-            st.session_state.log_for_date = date
-            w = parse_float(weight, "Weight")
-            t = parse_float(time, "Time")
-            d = parse_float(distance, "Distance")
-            vert = parse_float(vertical, "Vertical Distance")
-            if None in [w, t, d]:
-                st.error("❌ Please fix the inputs.")
-            else:
-                dist_km = d * 1.60934 if unit == "miles" else d
-                w_kg = w * 0.453592
-                time_hr = t / 60
-                MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
-                cal_flat = MET * w_kg * time_hr
-                vertical_m = vert * 0.3048  # convert feet to meters
-                cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184  # climbing calories
-                if vert is not None:
+            dist_km = d * 1.60934 if unit == "miles" else d
+            w_kg = w * 0.453592
+            time_hr = t / 60
+            MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
+            cal_flat = MET * w_kg * time_hr
+            if vert is not None:
                 vertical_m = vert * 0.3048  # convert feet to meters
                 cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
             else:
                 cal_climb = 0
-                kcal = cal_flat + cal_climb
-                parsed_date = pd.to_datetime(date)
-                new_row = {
-                    "date": parsed_date.strftime("%Y-%m-%d"),
-                    "weight_lbs": w,
-                    "time_min": t,
-                    "distance_km": dist_km,
-                    "vertical_feet": vert,
-                    "calories": round(kcal, 2),
-                    "user": st.session_state.user
-                }
-                st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
-                st.session_state.df["date"] = pd.to_datetime(st.session_state.df["date"], errors="coerce")
-                save_data(st.session_state.user, st.session_state.df)
-                st.success("✅ Workout saved!")
-                st.session_state.page = "home"
-                st.rerun()
+            kcal = cal_flat + cal_climb
+            parsed_date = pd.to_datetime(date)
+            new_row = {
+                "date": parsed_date.strftime("%Y-%m-%d"),
+                "weight_lbs": w,
+                "time_min": t,
+                "distance_km": dist_km,
+                "vertical_feet": vert if vert is not None else "",
+                "calories": round(kcal, 2),
+                "user": st.session_state.user
+            }
+            st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
+            st.session_state.df["date"] = pd.to_datetime(st.session_state.df["date"], errors="coerce")
+            save_data(st.session_state.user, st.session_state.df)
+            st.success("✅ Workout saved!")
+            st.session_state.page = "home"
+            st.rerun()
                 # ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
