@@ -182,7 +182,7 @@ st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_all
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.session_state.log_for_date = None  # Reset if returning from log
-    st.markdown("### 🗖️ Monthly Workout Calendar")
+    st.markdown("### 📆 Monthly Workout Calendar")
     today = datetime.today().date()
     current_month = st.session_state.selected_month
     today_class = "today-button-highlight"
