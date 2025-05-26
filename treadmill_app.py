@@ -113,11 +113,17 @@ def load_settings(user_id):
 
 def save_settings(user_id, settings):
     try:
-        settings["user"] = user_id  # ✅ Fix: Ensure 'user' field is set
+        settings["user"] = user_id  # Ensure 'user' is set
         ws = sheet.worksheet(SETTINGS_TAB)
-        existing = pd.DataFrame(ws.get_all_records())
-        existing = existing[existing["user"] != user_id]
-        combined = pd.concat([existing, pd.DataFrame([settings])], ignore_index=True)
+        existing_data = ws.get_all_records()
+        existing = pd.DataFrame(existing_data)
+
+        if existing.empty:
+            combined = pd.DataFrame([settings])
+        else:
+            existing = existing[existing["user"] != user_id]
+            combined = pd.concat([existing, pd.DataFrame([settings])], ignore_index=True)
+
         ws.clear()
         ws.update([combined.columns.tolist()] + combined.values.tolist())
     except Exception as e:
