@@ -73,7 +73,16 @@ def save_data(user_id, df):
         existing = existing[existing["user"] != user_id] if not existing.empty else pd.DataFrame()
         full = pd.concat([existing, df], ignore_index=True)
         ws.clear()
-        ws.update([full.columns.tolist()] + full.values.tolist())
+        # Convert all Timestamp or datetime objects to ISO string
+full = full.copy()
+for col in full.columns:
+    if full[col].dtype == "datetime64[ns]":
+        full[col] = full[col].dt.strftime("%Y-%m-%d")
+    elif full[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
+        full[col] = full[col].apply(lambda x: x.strftime("%Y-%m-%d") if isinstance(x, pd.Timestamp) else x)
+
+# Now update
+ws.update([full.columns.tolist()] + full.values.tolist())
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
 
