@@ -195,6 +195,7 @@ if st.session_state.page == "home":
     except Exception:
         weekly_count = 0
     weekly_goal = settings.get("weekly_goal", 5)
+
     def get_week_color(count):
         if count == 0: return "#8B0000"
         elif count == 1: return "#B22222"
@@ -203,9 +204,11 @@ if st.session_state.page == "home":
         elif count == 4: return "#228B22"
         elif count == 5: return "#1E90FF"
         else: return "#800080"
+
     st.markdown(f"""
-        <div style="text-align:center; font-size:20px; margin-bottom:12px;">
-            Weekly Workouts: <span style="color:{get_week_color(weekly_count)}; font-weight:bold;">{weekly_count}</span> / {weekly_goal}
+        <div style="text-align:center; font-size:26px; font-weight:bold; color:#87F3F8; margin-bottom:12px;">
+            Weekly Workouts:
+            <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
         </div>
     """, unsafe_allow_html=True)
 
@@ -241,7 +244,7 @@ if st.session_state.page == "home":
     all_dates = [grid_start + timedelta(days=i) for i in range((grid_end - grid_start).days + 1)]
 
     weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
-    for week in weeks:
+        for week in weeks:
         cols = st.columns(7)
         for i, day in enumerate(week):
             in_current_month = day.month == current_month.month
@@ -253,6 +256,7 @@ if st.session_state.page == "home":
             border = "2px solid #64b5f6"
             glow = "0 0 10px #00BFFF" if is_today else ""
             box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
+            text_color = '#555555' if not in_current_month else TEXT_COLOR
 
             with cols[i]:
                 btn_label = f"{day.day} {emoji}"
@@ -261,7 +265,7 @@ if st.session_state.page == "home":
                     <style>
                     [data-testid="stButton"][key="day_{day}"] button {{
                         background-color: {bg_color};
-                        color: {TEXT_COLOR};
+                        color: {text_color};
                         border: {border};
                         {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
                         font-weight: bold;
@@ -315,6 +319,8 @@ if st.session_state.page == "home":
         if st.button("⚙️ Settings"):
             st.session_state.page = "settings"
             st.rerun()
+
+
 
 # ─── Log Workout Page ───
 elif st.session_state.page == "log":
