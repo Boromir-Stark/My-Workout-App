@@ -471,7 +471,7 @@ with col_prev:
     st.markdown(f"⏱️ {total_min_prev:.0f} min")
     st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
     st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
-
+# End of progress page
 
 # ─── Settings Page ───
 elif st.session_state.page == "settings":
