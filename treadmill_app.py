@@ -362,7 +362,7 @@ elif st.session_state.page == "log":
             t = parse_float(time, "Time")
             d = parse_float(distance, "Distance")
             vert = parse_float(vertical, "Vertical Distance")
-            if None in [w, t, d, inc, vert]:
+            if None in [w, t, d, vert]:
                 st.error("❌ Please fix the inputs.")
             else:
                 dist_km = d * 1.60934 if unit == "miles" else d
