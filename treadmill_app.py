@@ -66,20 +66,28 @@ def load_data(user_id):
         st.error(f"Workout Load Error: {e}")
         return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "user"])
 
-def save_data(user_id, df):
+def save_data(user_id, df_new_rows):
     try:
-        df["user"] = user_id
+        df_new_rows["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
         existing = pd.DataFrame(ws.get_all_records())
-        existing = existing[existing["user"] != user_id] if not existing.empty else pd.DataFrame()
-        full = pd.concat([existing, df], ignore_index=True)
-        for col in full.columns:
-            if full[col].dtype == "datetime64[ns]":
-                full[col] = full[col].dt.strftime("%Y-%m-%d")
-            elif full[col].apply(lambda x: isinstance(x, pd.Timestamp)).any():
-                full[col] = full[col].apply(lambda x: x.strftime("%Y-%m-%d") if isinstance(x, pd.Timestamp) else x)
+
+        # Ensure dates are stringified consistently
+        df_new_rows["date"] = pd.to_datetime(df_new_rows["date"]).dt.strftime("%Y-%m-%d")
+
+        if not existing.empty:
+            # Ensure consistency in existing dates too
+            existing["date"] = pd.to_datetime(existing["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+            # Remove current user's old workouts
+            existing = existing[existing["user"] != user_id]
+
+        # Merge: keep others + add new from current user
+        full = pd.concat([existing, df_new_rows], ignore_index=True)
+
+        # Write back safely
         ws.clear()
         ws.update([full.columns.tolist()] + full.values.tolist())
+
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
 
