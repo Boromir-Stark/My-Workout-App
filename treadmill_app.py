@@ -344,11 +344,13 @@ if st.session_state.page == "home":
 elif st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Workout")
+
         if st.form_submit_button("🏠 Home"):
             st.session_state.page = "home"
             st.rerun()
 
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
+        
         # Prefill weight with last logged value if available
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
         weight = st.text_input("Weight (lbs)", value=str(last_weight))
@@ -365,52 +367,52 @@ elif st.session_state.page == "log":
 
         submitted = st.form_submit_button("Save Workout")
 
-    if submitted:
-        if date > datetime.today().date():
-            st.error("🚫 Cannot log a workout in the future.")
-        else:
-            st.session_state.log_for_date = date
-            w = parse_float(weight, "Weight")
-            t = parse_float(time, "Time")
-            d = parse_float(distance, "Distance")
-            vert = parse_float(vertical, "Vertical Distance", required=False)
-
-            if None in [w, t, d]:
-                st.error("❌ Please fix the inputs.")
+        if submitted:
+            if date > datetime.today().date():
+                st.error("🚫 Cannot log a workout in the future.")
             else:
-                dist_km = d * 1.60934 if unit == "miles" else d
-                w_kg = w * 0.453592
-                time_hr = t / 60
-                MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
-                cal_flat = MET * w_kg * time_hr
+                st.session_state.log_for_date = date
+                w = parse_float(weight, "Weight")
+                t = parse_float(time, "Time")
+                d = parse_float(distance, "Distance")
+                vert = parse_float(vertical, "Vertical Distance", required=False)
 
-# Only add climbing calories if vertical is provided
-cal_climb = 0
-if vert is not None:
-    vertical_m = vert * 0.3048
-    cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
+                if None in [w, t, d]:
+                    st.error("❌ Please fix the inputs.")
+                else:
+                    dist_km = d * 1.60934 if unit == "miles" else d
+                    w_kg = w * 0.453592
+                    time_hr = t / 60
+                    MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
+                    cal_flat = MET * w_kg * time_hr
 
-kcal = cal_flat + cal_climb
+                    # Only add climbing calories if vertical is provided
+                    cal_climb = 0
+                    if vert is not None:
+                        vertical_m = vert * 0.3048
+                        cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
 
-parsed_date = pd.to_datetime(date)
-new_row = {
-    "date": parsed_date.strftime("%Y-%m-%d"),
-    "weight_lbs": w,
-    "time_min": t,
-    "distance_km": dist_km,
-    "vertical_feet": vert or 0,
-    "calories": round(kcal, 2),
-    "user": st.session_state.user
-}
+                    kcal = cal_flat + cal_climb
 
-df_new = pd.DataFrame([new_row])
-save_data(st.session_state.user, df_new)
-st.success("✅ Workout saved!")
+                    parsed_date = pd.to_datetime(date)
+                    new_row = {
+                        "date": parsed_date.strftime("%Y-%m-%d"),
+                        "weight_lbs": w,
+                        "time_min": t,
+                        "distance_km": dist_km,
+                        "vertical_feet": vert or 0,
+                        "calories": round(kcal, 2),
+                        "user": st.session_state.user
+                    }
 
-# ✅ Go back to Home and highlight that date
-st.session_state.selected_day = date
-st.session_state.page = "home"
-st.rerun()
+                    df_new = pd.DataFrame([new_row])
+                    save_data(st.session_state.user, df_new)
+                    st.success("✅ Workout saved!")
+
+                    # Return to home and show this workout's summary
+                    st.session_state.selected_day = date
+                    st.session_state.page = "home"
+                    st.rerun()
 
 
 # ─── Progress Page ───
