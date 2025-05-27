@@ -113,6 +113,7 @@ def load_settings(user_id):
             "gender": "Male",
             "weekly_goal": 5
         }
+
 def parse_float(value, label, required=True):
     try:
         value = value.strip()
@@ -122,6 +123,7 @@ def parse_float(value, label, required=True):
     except Exception:
         st.error(f"❌ Invalid input for {label}. Please enter a number.")
         return None
+
 def save_settings(user_id, settings):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -132,7 +134,7 @@ def save_settings(user_id, settings):
         ws.update([combined.columns.tolist()] + combined.values.tolist())
     except Exception as e:
         st.error(f"Settings Save Error: {e}")
-        # ─── User Selection ───
+
 def get_all_users_with_names():
     try:
         records = sheet.worksheet(SETTINGS_TAB).get_all_records()
@@ -179,7 +181,6 @@ else:
 settings = load_settings(st.session_state.user)
 theme = settings.get("theme", "dark")
 df = load_data(st.session_state.user) if st.session_state.df is None else st.session_state.df
-
 # ─── Logo ───
 if os.path.exists(LOGO_FILE):
     with open(LOGO_FILE, "rb") as img_file:
@@ -190,8 +191,10 @@ st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_all
 
 # ─── Home Page ───
 if st.session_state.page == "home":
+    local_tz = pytz.timezone("America/Toronto")
+    today = datetime.now(local_tz).date()
+
     st.markdown("### 📆 Monthly Workout Calendar")
-    local_tz = pytz.timezone("America/Toronto")  # or your local time zone today = datetime.now(local_tz).date()
     current_month = st.session_state.selected_month
 
     # Weekly Tracker
@@ -330,11 +333,7 @@ if st.session_state.page == "home":
         if st.button("⚙️ Settings"):
             st.session_state.page = "settings"
             st.rerun()
-
-
-
-
-# ─── Log Workout Page ───
+            # ─── Log Workout Page ───
 elif st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Workout")
@@ -400,7 +399,8 @@ elif st.session_state.page == "log":
                 df_new = pd.DataFrame([new_row])
                 save_data(st.session_state.user, df_new)
                 st.success("✅ Workout saved!")
-                # ─── Progress Page ───
+
+# ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
     if st.button("🏠 Home"):
@@ -457,7 +457,6 @@ elif st.session_state.page == "progress":
         st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
 
         st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
-        # Calculate vertical feet totals
         vertical_sum = df_month["vertical_feet"].sum()
         vertical_prev = df_prev["vertical_feet"].sum()
 
