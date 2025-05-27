@@ -402,15 +402,18 @@ elif st.session_state.page == "log":
                     "calories": round(kcal, 2),
                     "user": st.session_state.user
                 }
+if submitted:
+    if date > datetime.today().date():
+        st.error("🚫 Cannot log a workout in the future.")
+    else:
+        ...
+        save_data(st.session_state.user, df_new)
+        st.success("✅ Workout saved!")
 
-                df_new = pd.DataFrame([new_row])
-                save_data(st.session_state.user, df_new)
-                st.success("✅ Workout saved!")
-
-# Set selected_day to the logged date to show the summary
-st.session_state.selected_day = date
-st.session_state.page = "home"
-st.rerun()
+        # ✅ MUST be indented here under 'if submitted:'
+        st.session_state.selected_day = date
+        st.session_state.page = "home"
+        st.rerun()
 # ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
