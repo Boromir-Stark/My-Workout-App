@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import base64
 import os
+import pytz
 import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -112,7 +113,15 @@ def load_settings(user_id):
             "gender": "Male",
             "weekly_goal": 5
         }
-
+def parse_float(value, label, required=True):
+    try:
+        value = value.strip()
+        if not value and not required:
+            return None
+        return float(value)
+    except Exception:
+        st.error(f"❌ Invalid input for {label}. Please enter a number.")
+        return None
 def save_settings(user_id, settings):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -182,7 +191,7 @@ st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_all
 # ─── Home Page ───
 if st.session_state.page == "home":
     st.markdown("### 📆 Monthly Workout Calendar")
-    today = datetime.now().date()
+    local_tz = pytz.timezone("America/Toronto")  # or your local time zone today = datetime.now(local_tz).date()
     current_month = st.session_state.selected_month
 
     # Weekly Tracker
