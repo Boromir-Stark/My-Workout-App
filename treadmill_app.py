@@ -407,6 +407,10 @@ elif st.session_state.page == "log":
                 save_data(st.session_state.user, df_new)
                 st.success("✅ Workout saved!")
 
+# Set selected_day to the logged date to show the summary
+st.session_state.selected_day = date
+st.session_state.page = "home"
+st.rerun()
 # ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
