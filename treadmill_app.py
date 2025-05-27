@@ -70,21 +70,20 @@ def save_data(user_id, df_new_rows):
     try:
         df_new_rows["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
+
+        # Load existing workouts
         existing = pd.DataFrame(ws.get_all_records())
 
-        # Ensure dates are stringified consistently
+        # Format new dates properly
         df_new_rows["date"] = pd.to_datetime(df_new_rows["date"]).dt.strftime("%Y-%m-%d")
 
+        # Combine old + new without removing anything
         if not existing.empty:
-            # Ensure consistency in existing dates too
-            existing["date"] = pd.to_datetime(existing["date"], errors="coerce").dt.strftime("%Y-%m-%d")
-            # Remove current user's old workouts
-            existing = existing[existing["user"] != user_id]
+            full = pd.concat([existing, df_new_rows], ignore_index=True)
+        else:
+            full = df_new_rows
 
-        # Merge: keep others + add new from current user
-        full = pd.concat([existing, df_new_rows], ignore_index=True)
-
-        # Write back safely
+        # Save
         ws.clear()
         ws.update([full.columns.tolist()] + full.values.tolist())
 
