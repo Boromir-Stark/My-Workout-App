@@ -384,36 +384,35 @@ elif st.session_state.page == "log":
                 MET = 8.0 if settings.get("gender", "Male") == "Male" else 7.0
                 cal_flat = MET * w_kg * time_hr
 
-                # Only add climbing calories if vertical is provided
-                cal_climb = 0
-                if vert is not None:
-                    vertical_m = vert * 0.3048
-                    cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
+# Only add climbing calories if vertical is provided
+cal_climb = 0
+if vert is not None:
+    vertical_m = vert * 0.3048
+    cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
 
-                kcal = cal_flat + cal_climb
+kcal = cal_flat + cal_climb
 
-                parsed_date = pd.to_datetime(date)
-                new_row = {
-                    "date": parsed_date.strftime("%Y-%m-%d"),
-                    "weight_lbs": w,
-                    "time_min": t,
-                    "distance_km": dist_km,
-                    "vertical_feet": vert or 0,
-                    "calories": round(kcal, 2),
-                    "user": st.session_state.user
-                }
-if submitted:
-    if date > datetime.today().date():
-        st.error("🚫 Cannot log a workout in the future.")
-    else:
-        ...
-        save_data(st.session_state.user, df_new)
-        st.success("✅ Workout saved!")
+parsed_date = pd.to_datetime(date)
+new_row = {
+    "date": parsed_date.strftime("%Y-%m-%d"),
+    "weight_lbs": w,
+    "time_min": t,
+    "distance_km": dist_km,
+    "vertical_feet": vert or 0,
+    "calories": round(kcal, 2),
+    "user": st.session_state.user
+}
 
-        # ✅ MUST be indented here under 'if submitted:'
-        st.session_state.selected_day = date
-        st.session_state.page = "home"
-        st.rerun()
+df_new = pd.DataFrame([new_row])
+save_data(st.session_state.user, df_new)
+st.success("✅ Workout saved!")
+
+# ✅ Go back to Home and highlight that date
+st.session_state.selected_day = date
+st.session_state.page = "home"
+st.rerun()
+
+
 # ─── Progress Page ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
