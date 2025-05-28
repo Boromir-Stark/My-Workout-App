@@ -73,25 +73,21 @@ def save_data(user_id, df_new_rows):
         df_new_rows["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
 
-        # Load existing workouts
-        existing = pd.DataFrame(ws.get_all_records())
-
         # Format new dates properly
         df_new_rows["date"] = pd.to_datetime(df_new_rows["date"]).dt.strftime("%Y-%m-%d")
+        if "activity" not in df_new_rows.columns:
+            df_new_rows["activity"] = "Walk"
 
-        # Combine old + new without removing anything
-        if not existing.empty:
-            full = pd.concat([existing, df_new_rows], ignore_index=True)
-        else:
-            full = df_new_rows
-
-        # Save
-        ws.clear()
-        ws.update([full.columns.tolist()] + full.values.tolist())
+        # Append rows (no clearing!)
+        existing = ws.get_all_values()
+        if not existing:
+            ws.append_row(df_new_rows.columns.tolist())  # header if sheet is empty
+        for row in df_new_rows.values.tolist():
+            ws.append_row(row)
 
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
-def load_settings(user_id):
+        def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
         records = ws.get_all_records()
@@ -270,7 +266,7 @@ if st.session_state.page == "log":
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
-                    # ─── HOME PAGE ───
+# ─── HOME PAGE ───
 elif st.session_state.page == "home":
     local_tz = pytz.timezone("America/Toronto")
     today = datetime.now(local_tz).date()
@@ -278,7 +274,6 @@ elif st.session_state.page == "home":
 
     st.markdown("### 📆 Monthly Workout Calendar")
 
-    # Weekly Tracker
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
     try:
@@ -316,13 +311,10 @@ elif st.session_state.page == "home":
     with nav2:
         st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
 
-    # Weekday headers
     weekday_cols = st.columns(7)
     for i, name in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
         weekday_cols[i].markdown(f"**{name}**", unsafe_allow_html=True)
 
-    # Calendar dates
-    from calendar import monthrange
     first_day = datetime(current_month.year, current_month.month, 1).date()
     _, last_day_num = monthrange(current_month.year, current_month.month)
     last_day = datetime(current_month.year, current_month.month, last_day_num).date()
@@ -382,7 +374,7 @@ elif st.session_state.page == "home":
         if not match.empty:
             row = match.iloc[0]
             st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
-            st.markdown(f"- Activity: `{row['activity']}`")
+            st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
             st.markdown(f"- Duration: `{row['time_min']} min`")
             st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
             st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
@@ -403,7 +395,9 @@ elif st.session_state.page == "home":
 # ─── PROGRESS PAGE ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
-    if st.button("🏠 Home"): st.session_state.page = "home"; st.rerun()
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+        st.rerun()
     if df.empty:
         st.info("No data yet.")
     else:
@@ -478,7 +472,4 @@ elif st.session_state.page == "progress":
             st.markdown(f"⏱️ {total_min_prev:.0f} min")
             st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
             st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
-
-# ⚙️ SETTINGS PAGE stays unchanged and is fully compatible
-
 
