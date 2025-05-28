@@ -333,7 +333,9 @@ elif st.session_state.page == "home":
             has_workout = not df[df["date"].dt.date == day].empty
             bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
             emoji = "🔥" if has_workout else ""
-            btn_label = f"{day.day} {'📍' if is_today else ''} {emoji}"
+            top_line = f"{day.day} {emoji}".strip() 
+            bottom_line = "📍" if is_today else "" 
+            btn_label = f"{top_line}{bottom_line}".strip()
             border = "2px solid #64b5f6"
             glow = "0 0 10px #00BFFF" if is_today else ""
             box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
