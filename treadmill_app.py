@@ -188,16 +188,11 @@ settings = load_settings(st.session_state.user)
 theme = settings.get("theme", "dark")
 df = load_data(st.session_state.user) if st.session_state.df is None else st.session_state.df
 
-# ─── LOGO (IMAGE AS BUTTON) ───
+# ─── LOGO ───
 if os.path.exists(LOGO_FILE):
     with open(LOGO_FILE, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("", key="logo_home_button"):
-            st.session_state.page = "home"
-            st.rerun()
-        st.image(f"data:image/png;base64,{encoded}", width=140)
+    st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
 
