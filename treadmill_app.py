@@ -68,21 +68,21 @@ def load_data(user_id):
         st.error(f"Workout Load Error: {e}")
         return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "activity", "user"])
 
+
 def save_data(user_id, df_new_rows):
     try:
         df_new_rows["user"] = user_id
         ws = sheet.worksheet(WORKOUT_TAB)
 
-        # Format new dates properly
         df_new_rows["date"] = pd.to_datetime(df_new_rows["date"]).dt.strftime("%Y-%m-%d")
         if "activity" not in df_new_rows.columns:
             df_new_rows["activity"] = "Walk"
 
-        # Append rows (no clearing!)
         existing = ws.get_all_values()
         if not existing:
-            ws.append_row(df_new_rows.columns.tolist())  # header if sheet is empty
-        for row in df_new_rows.values.tolist():
+            ws.append_row(df_new_rows.columns.tolist())
+
+        for row in df_new_rows[df_new_rows.columns].values.tolist():
             ws.append_row(row)
 
     except Exception as e:
