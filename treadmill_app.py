@@ -432,9 +432,6 @@ elif st.session_state.page == "settings":
     }
     </style>
     """, unsafe_allow_html=True)
-
-    # prevent progress page leak
-    else:
     <div style='text-align:center; margin-top:50px;'>
         <button style='font-size:20px; padding:12px 32px; border-radius:10px; background-color:#2196f3; color:white; border:none; cursor:pointer;' onclick="window.location.reload();">🏠 Home</button>
     </div>
