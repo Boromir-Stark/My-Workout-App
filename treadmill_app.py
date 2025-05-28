@@ -398,11 +398,25 @@ elif st.session_state.page == "home":
 # ─── PROGRESS PAGE ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
-    if st.button("🏠 Home"):
+    home_clicked = st.markdown("""
+    <div style='text-align:center;'>
+        <button onclick="window.location.reload()" style="
+            background-color:#2196F3;
+            color:white;
+            font-size:20px;
+            padding:12px 30px;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        ">🏠 Home</button>
+    </div>
+""", unsafe_allow_html=True)
+
+# Optional: simulate st.button effect manually if needed
+if st.session_state.page != "home":
+    if st.button("Go Home"):
         st.session_state.page = "home"
         st.rerun()
-    if df.empty:
-        st.info("No data yet.")
     else:
         height_m = settings["height_cm"] / 100
         current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
