@@ -195,15 +195,16 @@ if os.path.exists(LOGO_FILE):
     st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
+col = st.columns(3)[1]
+with col:
+    if st.button("🏠 Home", key="home_top_progress"):
+        st.session_state.page = "home"
+        st.rerun()
 
 # ─── LOG WORKOUT ───
 if st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Workout")
-
-        if st.form_submit_button("🏠 Home"):
-            st.session_state.page = "home"
-            st.rerun()
 
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
@@ -390,35 +391,23 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    st.markdown("""
-        <div style='text-align:center; margin-top: 20px;'>
-            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["logForm"].submit();'>🏋️ Log Workout</button><br>
-            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["progressForm"].submit();'>📊 My Progress</button><br>
-            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["settingsForm"].submit();'>⚙️ My Settings</button>
-        </div>
-    """, unsafe_allow_html=True)
+    col = st.columns(3)[1]
+    with col:
+        if st.button("🏋️ Log Workout"):
+            st.session_state.page = "log"
+            st.rerun()
+        if st.button("📊 My Progress"):
+            st.session_state.page = "progress"
+            st.rerun()
+        if st.button("⚙️ My Settings"):
+            st.session_state.page = "settings"
+            st.rerun()
 
-    log_btn = st.button("", key="btn_log_hidden")
-    progress_btn = st.button("", key="btn_progress_hidden")
-    settings_btn = st.button("", key="btn_settings_hidden")
-
-    if log_btn:
-        st.session_state.page = "log"
-        st.rerun()
-    if progress_btn:
-        st.session_state.page = "progress"
-        st.rerun()
-    if settings_btn:
-        st.session_state.page = "settings"
-        st.rerun()
-        st.session_state.page = "settings"
-        st.rerun()
+    # Removed hidden buttons used for layout workaround
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-        st.rerun()
+    
 
     st.title("⚙️ My Settings")
 
@@ -569,6 +558,13 @@ elif st.session_state.page == "progress":
         fig4.autofmt_xdate()
         ax4.tick_params(axis='x', labelrotation=45)
         st.pyplot(fig4)
+
+        # Centered Home button below all content
+        col = st.columns(3)[1]
+        with col:
+            if st.button("🏠 Home"):
+                st.session_state.page = "home"
+                st.rerun()
 
 
             
