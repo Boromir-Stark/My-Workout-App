@@ -404,10 +404,6 @@ elif st.session_state.page == "home":
 
     # Removed hidden buttons used for layout workaround
 
-    
-        st.session_state.page = "settings"
-        st.rerun()
-
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
     if st.button("🏠 Home"):
