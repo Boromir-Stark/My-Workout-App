@@ -506,7 +506,7 @@ if not df_month.empty:
     ax3.set_ylabel("minutes")
     ax3.set_xlabel("Day")
     st.pyplot(fig3)
-    if not df.empty:
+if not df.empty:
     st.markdown("### ⚖️ Weight Progress")
 
     df_weight = df.copy()
