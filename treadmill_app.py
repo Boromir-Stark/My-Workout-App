@@ -5,6 +5,7 @@ import base64
 import os
 import pytz
 import json
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
@@ -474,4 +475,49 @@ elif st.session_state.page == "progress":
             st.markdown(f"⏱️ {total_min_prev:.0f} min")
             st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
             st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
+            # ----- Bar Charts for Calories, Distance, Duration -----
+if not df_month.empty:
+    st.markdown("### 📊 Monthly Breakdown Charts")
+
+    df_bar = df_month.copy()
+    df_bar = df_bar.sort_values("date")
+    labels = df_bar["date"].dt.strftime("%d")
+
+    # Calories
+    fig1, ax1 = plt.subplots()
+    ax1.bar(labels, df_bar["calories"], color="#FF5722")
+    ax1.set_title("🔥 Calories by Day")
+    ax1.set_ylabel("kcal")
+    ax1.set_xlabel("Day")
+    st.pyplot(fig1)
+
+    # Distance
+    fig2, ax2 = plt.subplots()
+    ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
+    ax2.set_title("🛣️ Distance by Day")
+    ax2.set_ylabel("km")
+    ax2.set_xlabel("Day")
+    st.pyplot(fig2)
+
+    # Duration
+    fig3, ax3 = plt.subplots()
+    ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
+    ax3.set_title("⏱️ Duration by Day")
+    ax3.set_ylabel("minutes")
+    ax3.set_xlabel("Day")
+    st.pyplot(fig3)
+    if not df.empty:
+    st.markdown("### ⚖️ Weight Progress")
+
+    df_weight = df.copy()
+    df_weight = df_weight.sort_values("date")
+    fig4, ax4 = plt.subplots()
+    ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
+    ax4.set_title("📈 Weight Over Time")
+    ax4.set_ylabel("Weight (lbs)")
+    ax4.set_xlabel("Date")
+    ax4.grid(True)
+    st.pyplot(fig4)
+
+            
 
