@@ -397,7 +397,7 @@ elif st.session_state.page == "home":
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
-        if st.button("🏠 Home"):
+    if st.button("🏠 Home"):
         st.session_state.page = "home"
         st.rerun()
                 height_m = settings["height_cm"] / 100
