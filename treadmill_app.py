@@ -399,10 +399,6 @@ elif st.session_state.page == "home":
 elif st.session_state.page == "settings":
     st.title("⚙️ My Settings")
 
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-        st.rerun()
-
     name = st.text_input("Display Name", value=settings.get("name", ""))
     height = st.number_input("Height (cm)", value=settings.get("height_cm", 175))
     birth_year = st.number_input("Birth Year", value=settings.get("birth_year", 1991))
@@ -425,6 +421,17 @@ elif st.session_state.page == "settings":
         save_settings(st.session_state.user, new_settings)
         st.success("✅ Settings saved!")
         st.rerun()
+
+    st.markdown("""
+    <div style='text-align:center; margin-top:50px;'>
+        <button style='font-size:20px; padding:12px 32px; border-radius:10px; background-color:#2196f3; color:white; border:none; cursor:pointer;' onclick="window.location.reload();">🏠 Home</button>
+    </div>
+    <style>
+    button:hover {
+        background-color: #1976d2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     if df.empty:
         st.info("No data yet.")
