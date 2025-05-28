@@ -390,10 +390,16 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    if col1.button("🏋️ Log Workout"): st.session_state.page = "log"; st.rerun()
-    if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
-    if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
+    st.markdown("""
+        <div style='text-align:center;'>
+            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=log'">🏋️ Log Workout</button><br>
+            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=progress'">📊 Progress</button><br>
+            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=settings'">⚙️ Settings</button>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.query_params.get("page") == "log": st.session_state.page = "log"; st.rerun()
+    if st.query_params.get("page") == "progress": st.session_state.page = "progress"; st.rerun()
+    if st.query_params.get("page") == "settings": st.session_state.page = "settings"; st.rerun()
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
