@@ -439,6 +439,11 @@ elif st.session_state.page == "settings":
         st.rerun()
 
 elif st.session_state.page == "progress":
+    st.markdown("<div style='text-align:center; margin-top:30px;'>", unsafe_allow_html=True)
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
     st.title("📊 My Progress")
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
