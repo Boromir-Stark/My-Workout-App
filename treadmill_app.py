@@ -422,9 +422,16 @@ elif st.session_state.page == "settings":
         st.success("✅ Settings saved!")
         st.rerun()
 
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-        st.rerun()
+    st.markdown("""
+    <div style='text-align:center; margin-top:50px;'>
+        <button style='font-size:20px; padding:12px 32px; border-radius:10px; background-color:#2196f3; color:white; border:none; cursor:pointer;' onclick="window.location.reload();">🏠 Home</button>
+    </div>
+    <style>
+    button:hover {
+        background-color: #1976d2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # prevent progress page leak
     else:
