@@ -395,6 +395,44 @@ elif st.session_state.page == "home":
     if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
     if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
 
+# ─── SETTINGS PAGE ───
+elif st.session_state.page == "settings":
+    st.title("⚙️ My Settings")
+
+    name = st.text_input("Display Name", value=settings.get("name", ""))
+    height = st.number_input("Height (cm)", value=settings.get("height_cm", 175))
+    birth_year = st.number_input("Birth Year", value=settings.get("birth_year", 1991))
+    gender = st.selectbox("Gender", ["Male", "Female"], index=0 if settings.get("gender") == "Male" else 1)
+    goal_km = st.number_input("Monthly Goal (km)", value=settings.get("goal_km", 100))
+    weekly_goal = st.number_input("Weekly Workouts Goal", value=settings.get("weekly_goal", 5))
+    theme = st.selectbox("Theme", ["light", "dark"], index=1 if settings.get("theme") == "dark" else 0)
+
+    if st.button("💾 Save Settings"):
+        new_settings = {
+            "user": st.session_state.user,
+            "name": name,
+            "height_cm": height,
+            "birth_year": birth_year,
+            "gender": gender,
+            "goal_km": goal_km,
+            "weekly_goal": weekly_goal,
+            "theme": theme
+        }
+        save_settings(st.session_state.user, new_settings)
+        st.success("✅ Settings saved!")
+        st.rerun()
+
+    st.markdown("""
+    <div style='text-align:center; margin-top:50px;'>
+        <button style='font-size:20px; padding:12px 32px; border-radius:10px; background-color:#2196f3; color:white; border:none; cursor:pointer;' onclick="window.location.reload();">🏠 Home</button>
+    </div>
+    <style>
+    button:hover {
+        background-color: #1976d2;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # ─── PROGRESS PAGE ───
 elif st.session_state.page == "progress":
     st.title("📊 Progress & Summary")
