@@ -87,7 +87,7 @@ def save_data(user_id, df_new_rows):
 
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
-        def load_settings(user_id):
+def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
         records = ws.get_all_records()
