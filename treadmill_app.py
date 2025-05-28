@@ -411,7 +411,7 @@ elif st.session_state.page == "progress":
 
 st.session_state.page = "home"
 st.rerun()
-    if df.empty:
+        if df.empty:
         st.info("No data yet.")
     else:
         height_m = settings["height_cm"] / 100
