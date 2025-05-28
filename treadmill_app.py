@@ -196,9 +196,14 @@ if os.path.exists(LOGO_FILE):
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
 if st.session_state.page != "home":
-    col = st.columns(3)[1]
-    with col:
-        if st.button("🏠 Home", key="home_top_progress"):
+    st.markdown("""
+        <div style='display:flex; justify-content:center; margin-bottom:20px;'>
+            <form action='#' method='post'>
+                <button type='submit' style='font-size:16px; padding:10px 20px; border-radius:10px; background-color:#444; color:white; border:none;'>🏠 Home</button>
+            </form>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.form_submit_button("🏠 Home", key="home_top_progress"):
             st.session_state.page = "home"
             st.rerun()
 
