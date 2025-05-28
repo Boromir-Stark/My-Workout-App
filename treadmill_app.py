@@ -404,15 +404,7 @@ elif st.session_state.page == "home":
 
     # Removed hidden buttons used for layout workaround
 
-    if log_btn:
-        st.session_state.page = "log"
-        st.rerun()
-    if progress_btn:
-        st.session_state.page = "progress"
-        st.rerun()
-    if settings_btn:
-        st.session_state.page = "settings"
-        st.rerun()
+    
         st.session_state.page = "settings"
         st.rerun()
 
