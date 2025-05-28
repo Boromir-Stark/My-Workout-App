@@ -393,8 +393,8 @@ elif st.session_state.page == "home":
     st.markdown("""
         <div style='text-align:center;'>
             <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=log'">🏋️ Log Workout</button><br>
-            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=progress'">📊 Progress</button><br>
-            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=settings'">⚙️ Settings</button>
+            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick=\"window.location.href='?page=progress'\">📊 My Progress</button><br>
+            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick=\"window.location.href='?page=settings'\">⚙️ My Settings</button>
         </div>
     """, unsafe_allow_html=True)
     if st.query_params.get("page") == "log": st.session_state.page = "log"; st.rerun()
