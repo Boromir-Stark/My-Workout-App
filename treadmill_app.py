@@ -146,6 +146,10 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except Exception:
         return []
+def home_button():
+    if st.button("🏠 Home", help="Go back to the main menu"):
+        st.session_state.page = "home"
+        st.rerun()
 
 # ─── USER SELECTION ───
 user_list = get_all_users_with_names()
