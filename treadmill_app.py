@@ -399,10 +399,9 @@ elif st.session_state.page == "home":
 elif st.session_state.page == "settings":
     st.title("⚙️ My Settings")
 
-    # ─── Home Button ───
     if st.button("🏠 Home"):
-    st.session_state.page = "home"
-    st.rerun()
+        st.session_state.page = "home"
+        st.rerun()
 
     name = st.text_input("Display Name", value=settings.get("name", ""))
     height = st.number_input("Height (cm)", value=settings.get("height_cm", 175))
