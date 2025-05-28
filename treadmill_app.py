@@ -390,16 +390,18 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    st.markdown("""
-        <div style='text-align:center;'>
-            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick="window.location.href='?page=log'">🏋️ Log Workout</button><br>
-            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick=\"window.location.href='?page=progress'\">📊 My Progress</button><br>
-            <button style='font-size:22px; padding:12px 24px; margin:8px; border-radius:12px; background-color:#444; color:white; border:none; cursor:pointer;' onclick=\"window.location.href='?page=settings'\">⚙️ My Settings</button>
-        </div>
-    """, unsafe_allow_html=True)
-    if st.query_params.get("page") == "log": st.session_state.page = "log"; st.rerun()
-    if st.query_params.get("page") == "progress": st.session_state.page = "progress"; st.rerun()
-    if st.query_params.get("page") == "settings": st.session_state.page = "settings"; st.rerun()
+    log_btn = st.button("🏋️ Log Workout", key="go_log", help="Log a new workout")
+    progress_btn = st.button("📊 My Progress", key="go_progress", help="View your workout summary")
+    settings_btn = st.button("⚙️ My Settings", key="go_settings", help="Edit your settings")
+    if log_btn:
+        st.session_state.page = "log"
+        st.rerun()
+    if progress_btn:
+        st.session_state.page = "progress"
+        st.rerun()
+    if settings_btn:
+        st.session_state.page = "settings"
+        st.rerun()
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
@@ -436,7 +438,7 @@ elif st.session_state.page == "settings":
         st.rerun()
 
 elif st.session_state.page == "progress":
-    st.title("📊 Progress & Summary")
+    st.title("📊 My Progress")
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
     current_bmi = (current_weight * 0.453592) / (height_m ** 2)
