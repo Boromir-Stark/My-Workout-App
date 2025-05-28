@@ -433,9 +433,7 @@ elif st.session_state.page == "settings":
     </style>
     """, unsafe_allow_html=True)
 
-    if df.empty:
-        st.info("No data yet.")
-        st.info("No data yet.")
+    
     else:
         height_m = settings["height_cm"] / 100
         current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
