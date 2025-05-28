@@ -440,7 +440,6 @@ elif st.session_state.page == "settings":
 
 elif st.session_state.page == "progress":
     st.title("📊 My Progress")
-    st.title("📊 My Progress")
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
     current_bmi = (current_weight * 0.453592) / (height_m ** 2)
@@ -562,11 +561,11 @@ elif st.session_state.page == "progress":
         st.pyplot(fig4)
 
         # Centered Home button below all content
-        st.markdown("<div style='text-align:center; margin-top:40px;'>", unsafe_allow_html=True)
-        if st.button("🏠 Home"):
-            st.session_state.page = "home"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        col = st.columns(3)[1]
+        with col:
+            if st.button("🏠 Home"):
+                st.session_state.page = "home"
+                st.rerun()
 
 
             
