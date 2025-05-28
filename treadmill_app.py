@@ -422,7 +422,12 @@ elif st.session_state.page == "settings":
         st.success("✅ Settings saved!")
         st.rerun()
 
-    st.markdown("""
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+        st.rerun()
+
+    # prevent progress page leak
+    else:
     <div style='text-align:center; margin-top:50px;'>
         <button style='font-size:20px; padding:12px 32px; border-radius:10px; background-color:#2196f3; color:white; border:none; cursor:pointer;' onclick="window.location.reload();">🏠 Home</button>
     </div>
