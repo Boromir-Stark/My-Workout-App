@@ -195,17 +195,15 @@ if os.path.exists(LOGO_FILE):
     st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
-if st.session_state.page != "home":
-    col = st.columns(3)[1]
-    with col:
-        if st.button("🏠 Home", key="home_top"):
-            st.session_state.page = "home"
-            st.rerun()
 
 # ─── LOG WORKOUT ───
 if st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Workout")
+
+        if st.form_submit_button("🏠 Home"):
+            st.session_state.page = "home"
+            st.rerun()
 
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
@@ -392,23 +390,16 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    col = st.columns(3)[1]
-    with col:
-        if st.button("🏋️ Log Workout"):
-            st.session_state.page = "log"
-            st.rerun()
-        if st.button("📊 My Progress"):
-            st.session_state.page = "progress"
-            st.rerun()
-        if st.button("⚙️ My Settings"):
-            st.session_state.page = "settings"
-            st.rerun()
-
-    # Removed hidden buttons used for layout workaround
+    col1, col2, col3 = st.columns(3)
+    if col1.button("🏋️ Log Workout"): st.session_state.page = "log"; st.rerun()
+    if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
+    if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
-    
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+        st.rerun()
 
     st.title("⚙️ My Settings")
 
@@ -439,7 +430,7 @@ elif st.session_state.page == "settings":
         st.rerun()
 
 elif st.session_state.page == "progress":
-    st.title("📊 My Progress")
+    st.title("📊 Progress & Summary")
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
     current_bmi = (current_weight * 0.453592) / (height_m ** 2)
@@ -559,13 +550,6 @@ elif st.session_state.page == "progress":
         fig4.autofmt_xdate()
         ax4.tick_params(axis='x', labelrotation=45)
         st.pyplot(fig4)
-
-        # Centered Home button below all content
-        col = st.columns(3)[1]
-        with col:
-            if st.button("🏠 Home"):
-                st.session_state.page = "home"
-                st.rerun()
 
 
             
