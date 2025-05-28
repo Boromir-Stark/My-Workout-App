@@ -408,9 +408,7 @@ elif st.session_state.page == "progress":
     }
     </style>
     """, unsafe_allow_html=True)
-
-st.session_state.page = "home"
-st.rerun()
+    if df.empty:
 
     if df.empty:
         st.info("No data yet.")
