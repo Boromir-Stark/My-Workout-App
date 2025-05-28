@@ -192,7 +192,7 @@ df = load_data(st.session_state.user) if st.session_state.df is None else st.ses
 if os.path.exists(LOGO_FILE):
     with open(LOGO_FILE, "rb") as img_file:
         encoded = base64.b64encode(img_file.read()).decode()
-        st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center;'><a href='#' onclick=\"window.location.reload();\"><img src='data:image/png;base64,{encoded}' width='140'/></a></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
 
