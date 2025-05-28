@@ -390,9 +390,18 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    log_btn = st.button("🏋️ Log Workout", key="go_log", help="Log a new workout")
-    progress_btn = st.button("📊 My Progress", key="go_progress", help="View your workout summary")
-    settings_btn = st.button("⚙️ My Settings", key="go_settings", help="Edit your settings")
+    st.markdown("""
+        <div style='text-align:center; margin-top: 20px;'>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["logForm"].submit();'>🏋️ Log Workout</button><br>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["progressForm"].submit();'>📊 My Progress</button><br>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["settingsForm"].submit();'>⚙️ My Settings</button>
+        </div>
+    """, unsafe_allow_html=True)
+
+    log_btn = st.button("", key="btn_log_hidden")
+    progress_btn = st.button("", key="btn_progress_hidden")
+    settings_btn = st.button("", key="btn_settings_hidden")
+
     if log_btn:
         st.session_state.page = "log"
         st.rerun()
@@ -400,6 +409,8 @@ elif st.session_state.page == "home":
         st.session_state.page = "progress"
         st.rerun()
     if settings_btn:
+        st.session_state.page = "settings"
+        st.rerun()
         st.session_state.page = "settings"
         st.rerun()
 
