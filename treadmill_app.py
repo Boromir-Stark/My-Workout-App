@@ -390,10 +390,23 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    if col1.button("🏋️ Log Workout"): st.session_state.page = "log"; st.rerun()
-    if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
-    if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
+    col = st.columns(3)[1]
+    with col:
+        if st.button("🏋️ Log Workout"):
+            st.session_state.page = "log"
+            st.rerun()
+        if st.button("📊 My Progress"):
+            st.session_state.page = "progress"
+            st.rerun()
+        if st.button("⚙️ My Settings"):
+            st.session_state.page = "settings"
+            st.rerun()
+
+    # Removed hidden buttons used for layout workaround
+
+    
+        st.session_state.page = "settings"
+        st.rerun()
 
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
@@ -430,7 +443,7 @@ elif st.session_state.page == "settings":
         st.rerun()
 
 elif st.session_state.page == "progress":
-    st.title("📊 Progress & Summary")
+    st.title("📊 My Progress")
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
     current_bmi = (current_weight * 0.453592) / (height_m ** 2)
