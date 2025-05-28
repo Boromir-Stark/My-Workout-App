@@ -398,9 +398,7 @@ elif st.session_state.page == "home":
         </div>
     """, unsafe_allow_html=True)
 
-    log_btn = st.button("", key="btn_log_hidden")
-    progress_btn = st.button("", key="btn_progress_hidden")
-    settings_btn = st.button("", key="btn_settings_hidden")
+    # Removed hidden buttons used for layout workaround
 
     if log_btn:
         st.session_state.page = "log"
