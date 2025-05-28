@@ -69,7 +69,6 @@ def load_data(user_id):
         st.error(f"Workout Load Error: {e}")
         return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "activity", "user"])
 
-
 def save_data(user_id, df_new_rows):
     try:
         df_new_rows["user"] = user_id
@@ -88,6 +87,7 @@ def save_data(user_id, df_new_rows):
 
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
+
 def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -146,11 +146,23 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except Exception:
         return []
-def home_button():
-    if st.button("🏠 Home", help="Go back to the main menu"):
-        st.session_state.page = "home"
-        st.rerun()
 
+def home_button():
+    st.markdown("""
+    <div style='text-align:center; margin:20px 0;'>
+        <button onclick="window.location.reload()" style="
+            background-color:#2196F3;
+            color:white;
+            font-size:20px;
+            padding:12px 30px;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        ">🏠 Home</button>
+    </div>
+    """, unsafe_allow_html=True)
+
+# (user selector and page logic comes next)
 # ─── USER SELECTION ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
@@ -200,13 +212,108 @@ if os.path.exists(LOGO_FILE):
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
 
-# ─── LOG WORKOUT ───
-if st.session_state.page == "log":
-    with st.form("log_form"):
-        st.title("🏋️ Log Workout")
+# ─── PAGE ROUTING ───
+if st.session_state.page == "home":
 
-        home_clicked = st.markdown("""
-    <div style='text-align:center;'>
+    # Calendar section
+    st.markdown("### 📆 Monthly Workout Calendar")
+    local_tz = pytz.timezone("America/Toronto")
+    today = datetime.now(local_tz).date()
+    current_month = st.session_state.selected_month
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
+
+    # Navigation
+    col1, col2, col3 = st.columns([1, 5, 1])
+    with col1:
+        if st.button("◀️"):
+            st.session_state.selected_month -= relativedelta(months=1)
+            st.rerun()
+    with col3:
+        if st.button("▶️"):
+            st.session_state.selected_month += relativedelta(months=1)
+            st.rerun()
+    with col2:
+        st.markdown(f"<div style='text-align:center; font-weight:bold; font-size:18px'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
+
+    # Weekdays header
+    cols = st.columns(7)
+    for i, label in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
+        cols[i].markdown(f"**{label}**", unsafe_allow_html=True)
+
+    # Calendar grid
+    first_day = datetime(current_month.year, current_month.month, 1).date()
+    _, last_day_num = monthrange(current_month.year, current_month.month)
+    last_day = datetime(current_month.year, current_month.month, last_day_num).date()
+    start = first_day - timedelta(days=first_day.weekday())
+    end = last_day + timedelta(days=(6 - last_day.weekday()))
+    all_days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+    weeks = [all_days[i:i + 7] for i in range(0, len(all_days), 7)]
+
+    for week in weeks:
+        cols = st.columns(7)
+        for i, day in enumerate(week):
+            in_month = (day.month == current_month.month)
+            is_today = (day == today)
+            is_selected = (st.session_state.selected_day == day)
+            has_workout = not df[df["date"].dt.date == day].empty
+            bg = BG_WORKOUT if has_workout else (BG_EMPTY if in_month else "#cccccc")
+            emoji = "🔥" if has_workout else ""
+            top = f"{day.day}"
+            bottom = "📍" if is_today else ""
+            label = f"{top} {bottom}".strip()
+            key = f"day_{day}"
+
+            with cols[i]:
+                clicked = st.button(f"{label}", key=key)
+                st.markdown(f"""
+                <style>
+                [data-testid="stButton"][key="{key}"] button {{
+                    background-color: {bg};
+                    color: {'#555' if not in_month else TEXT_COLOR};
+                    font-weight: bold;
+                    font-size: 16px;
+                    padding: 12px 0;
+                    border-radius: 10px;
+                    border: 2px solid #64b5f6;
+                    box-shadow: {'0 0 10px #00BFFF' if is_today else 'none'};
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+                if clicked:
+                    if has_workout:
+                        st.session_state.selected_day = day
+                    else:
+                        st.session_state.page = "log"
+                        st.session_state.log_for_date = day
+                    st.rerun()
+
+    # Summary for selected day
+    if st.session_state.selected_day:
+        selected = st.session_state.selected_day
+        match = df[df["date"].dt.date == selected]
+        st.markdown("---")
+        if not match.empty:
+            row = match.iloc[0]
+            st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
+            st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
+            st.markdown(f"- Duration: `{row['time_min']} min`")
+            st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
+            st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
+            st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
+        else:
+            st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
+
+    st.markdown("---")
+    col1, col2, col3 = st.columns(3)
+    if col1.button("🏋️ Log Workout"): st.session_state.page = "log"; st.rerun()
+    if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
+    if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
+    # ─── LOG WORKOUT ───
+elif st.session_state.page == "log":
+    st.title("🏋️ Log Workout")
+    st.markdown("""
+    <div style='text-align:center; margin-bottom: 20px;'>
         <button onclick="window.location.reload()" style="
             background-color:#2196F3;
             color:white;
@@ -217,23 +324,20 @@ if st.session_state.page == "log":
             cursor:pointer;
         ">🏠 Home</button>
     </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-
+    with st.form("log_form"):
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
         weight = st.text_input("Weight (lbs)", value=str(last_weight))
         time = st.text_input("Time (min)")
-
         distance_col1, distance_col2 = st.columns([3, 1])
         with distance_col1:
             distance = st.text_input("Distance")
         with distance_col2:
             unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
-
         vertical = st.text_input("Vertical Distance (ft)")
         activity = st.selectbox("Activity Type", ["Walk", "Rollerblade"], index=0)
-
         submitted = st.form_submit_button("Save Workout")
 
         if submitted:
@@ -255,15 +359,14 @@ if st.session_state.page == "log":
 
                     MET = 3.5 if activity == "Walk" else 9.0
                     cal_flat = MET * w_kg * time_hr
-
                     cal_climb = 0
                     if vert is not None:
                         vertical_m = vert * 0.3048
                         cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
 
                     kcal = cal_flat + cal_climb
-
                     parsed_date = pd.to_datetime(date)
+
                     new_row = {
                         "date": parsed_date.strftime("%Y-%m-%d"),
                         "weight_lbs": w,
@@ -278,279 +381,112 @@ if st.session_state.page == "log":
                     df_new = pd.DataFrame([new_row])
                     save_data(st.session_state.user, df_new)
                     st.success("✅ Workout saved!")
-
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
-# ─── HOME PAGE ───
-elif st.session_state.page == "home":
-    local_tz = pytz.timezone("America/Toronto")
-    today = datetime.now(local_tz).date()
-    current_month = st.session_state.selected_month
 
-    st.markdown("### 📆 Monthly Workout Calendar")
+                    # ----- Bar Charts for Calories, Distance, Duration -----
+    if not df_month.empty:
+        st.markdown("### 📊 Monthly Breakdown Charts")
 
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
-    try:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
-        df_week = df[(df["date"].dt.date >= start_of_week) & (df["date"].dt.date <= end_of_week)]
-        weekly_count = df_week["date"].dt.date.nunique()
-    except Exception:
-        weekly_count = 0
+        df_bar = df_month.copy()
+        df_bar = df_bar.sort_values("date")
+        labels = df_bar["date"].dt.strftime("%d")
 
-    weekly_goal = settings.get("weekly_goal", 5)
+        # Calories Bar Chart
+        fig1, ax1 = plt.subplots()
+        bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
+        ax1.set_title("🔥 Calories by Day")
+        ax1.set_ylabel("kcal")
+        ax1.set_xlabel("Day")
+        for bar in bars1:
+            height = bar.get_height()
+            ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig1)
 
-    def get_week_color(count):
-        return ["#8B0000", "#B22222", "#B8860B", "#FFD700", "#228B22", "#1E90FF", "#800080"][min(count, 6)]
+        # Distance Bar Chart
+        fig2, ax2 = plt.subplots()
+        bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
+        ax2.set_title("🛣️ Distance by Day")
+        ax2.set_ylabel("km")
+        ax2.set_xlabel("Day")
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig2)
 
-    st.markdown(f"""
-        <div style="text-align:center; font-size:26px; font-weight:bold; color:#87F3F8; margin-bottom:12px;">
-            Weekly Workouts:
-            <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
-        </div>
+        # Duration Bar Chart
+        fig3, ax3 = plt.subplots()
+        bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
+        ax3.set_title("⏱️ Duration by Day")
+        ax3.set_ylabel("minutes")
+        ax3.set_xlabel("Day")
+        for bar in bars3:
+            height = bar.get_height()
+            ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig3)
+
+    # ----- Line Chart for Weight Progress -----
+    if not df.empty:
+        st.markdown("### ⚖️ Weight Progress")
+
+        df_weight = df.copy()
+        df_weight = df_weight.sort_values("date")
+        df_weight = df_weight[df_weight["weight_lbs"].notnull()]
+
+        fig4, ax4 = plt.subplots()
+        ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
+        ax4.set_title("📈 Weight Over Time")
+        ax4.set_ylabel("Weight (lbs)")
+        ax4.set_xlabel("Date")
+        ax4.grid(True)
+
+        fig4.autofmt_xdate()
+        ax4.tick_params(axis='x', labelrotation=45)
+        st.pyplot(fig4)
+
+# ─── SETTINGS PAGE ───
+elif st.session_state.page == "settings":
+    st.title("⚙️ Settings")
+    st.markdown("""
+    <div style='text-align:center; margin-bottom: 20px;'>
+        <button onclick="window.location.reload()" style="
+            background-color:#2196F3;
+            color:white;
+            font-size:20px;
+            padding:12px 30px;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+        ">🏠 Home</button>
+    </div>
     """, unsafe_allow_html=True)
 
-    df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
+    name = st.text_input("Your Name", value=settings.get("name", "Default"))
+    height_cm = st.number_input("Height (cm)", value=settings.get("height_cm", 175), step=1)
+    birth_year = st.number_input("Year of Birth", value=settings.get("birth_year", 1991), step=1)
+    goal_km = st.number_input("Monthly Goal (km)", value=settings.get("goal_km", 100), step=1)
+    weekly_goal = st.number_input("Weekly Goal (workouts)", value=settings.get("weekly_goal", 5), step=1)
+    gender = st.radio("Gender", ["Male", "Female"], index=0 if settings.get("gender") == "Male" else 1)
+    theme = st.radio("Theme", ["dark", "light"], index=0 if settings.get("theme") == "dark" else 1)
 
-    nav1, nav2, nav3 = st.columns([1, 5, 1])
-    with nav1:
-        if st.button("◀️"):
-            st.session_state.selected_month -= relativedelta(months=1)
-            st.session_state.selected_day = None
-            st.rerun()
-    with nav3:
-        if st.button("▶️"):
-            st.session_state.selected_month += relativedelta(months=1)
-            st.session_state.selected_day = None
-            st.rerun()
-    with nav2:
-        st.markdown(f"<div style='text-align:center; font-size:18px; font-weight:bold;'>{current_month.strftime('%B %Y')}</div>", unsafe_allow_html=True)
-
-    weekday_cols = st.columns(7)
-    for i, name in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
-        weekday_cols[i].markdown(f"**{name}**", unsafe_allow_html=True)
-
-    first_day = datetime(current_month.year, current_month.month, 1).date()
-    _, last_day_num = monthrange(current_month.year, current_month.month)
-    last_day = datetime(current_month.year, current_month.month, last_day_num).date()
-
-    grid_start = first_day - timedelta(days=first_day.weekday())
-    grid_end = last_day + timedelta(days=(6 - last_day.weekday()))
-    all_dates = [grid_start + timedelta(days=i) for i in range((grid_end - grid_start).days + 1)]
-    weeks = [all_dates[i:i + 7] for i in range(0, len(all_dates), 7)]
-
-    for week in weeks:
-        cols = st.columns(7)
-        for i, day in enumerate(week):
-            in_current_month = day.month == current_month.month
-            is_today = (day == today)
-            is_selected = (st.session_state.selected_day == day)
-            has_workout = not df[df["date"].dt.date == day].empty
-            bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
-            emoji = "🔥" if has_workout else ""
-            top_line = f"{day.day} {emoji}".strip() 
-            bottom_line = "📍" if is_today else "" 
-            btn_label = f"{top_line}{bottom_line}".strip()
-            border = "2px solid #64b5f6"
-            glow = "0 0 10px #00BFFF" if is_today else ""
-            box_shadow = f"inset 0 0 0 3px #FF9800; box-shadow: {glow};" if is_selected or is_today else ""
-            text_color = '#555555' if not in_current_month else TEXT_COLOR
-
-            with cols[i]:
-                clicked = st.button(btn_label, key=f"day_{day}")
-                st.markdown(f'''
-                    <style>
-                    [data-testid="stButton"][key="day_{day}"] button {{
-                        background-color: {bg_color};
-                        color: {text_color};
-                        border: {border};
-                        {f'box-shadow: {glow};' if is_today and not is_selected else f'box-shadow: {box_shadow};'}
-                        font-weight: bold;
-                        font-size: 16px;
-                        padding: 12px 0;
-                        border-radius: 10px;
-                        width: 100%;
-                        height: 48px;
-                        text-align: center;
-                    }}
-                    </style>
-                ''', unsafe_allow_html=True)
-                if clicked:
-                    if has_workout:
-                        st.session_state.selected_day = day
-                        st.rerun()
-                    else:
-                        st.session_state.log_for_date = day
-                        st.session_state.page = "log"
-                        st.rerun()
-
-    if st.session_state.selected_day:
-        st.markdown("---")
-        selected = st.session_state.selected_day
-        match = df[df["date"].dt.date == selected]
-        if not match.empty:
-            row = match.iloc[0]
-            st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
-            st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
-            st.markdown(f"- Duration: `{row['time_min']} min`")
-            st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
-            st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
-            st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
-        else:
-            st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
-            if st.button("Log Workout for this Day"):
-                st.session_state.log_for_date = selected
-                st.session_state.page = "log"
-                st.rerun()
-
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    if col1.button("🏋️ Log Workout"): st.session_state.page = "log"; st.rerun()
-    if col2.button("📊 Progress"): st.session_state.page = "progress"; st.rerun()
-    if col3.button("⚙️ Settings"): st.session_state.page = "settings"; st.rerun()
-
-# ─── PROGRESS PAGE ───
-elif st.session_state.page == "progress":
-    st.title("📊 Progress & Summary")
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
+    if st.button("Save Settings"):
+        updated = {
+            "user": st.session_state.user,
+            "name": name,
+            "height_cm": height_cm,
+            "birth_year": birth_year,
+            "goal_km": goal_km,
+            "weekly_goal": weekly_goal,
+            "gender": gender,
+            "theme": theme
+        }
+        save_settings(st.session_state.user, updated)
+        st.success("✅ Settings saved! Refreshing...")
+        st.session_state.df = None
         st.rerun()
-    else:
-        height_m = settings["height_cm"] / 100
-        current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
-        current_bmi = (current_weight * 0.453592) / (height_m ** 2)
-        target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
 
-        current_month = st.session_state.selected_month
-        df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
-        prev_month = current_month - relativedelta(months=1)
-        df_prev = df[df["date"].dt.strftime("%Y-%m") == prev_month.strftime("%Y-%m")]
-
-        def stat_delta(current, previous):
-            if previous == 0: return ""
-            if current > previous:
-                return f"<span style='color:green'>↑ {current - previous:.2f}</span>"
-            elif current < previous:
-                return f"<span style='color:red'>↓ {previous - current:.2f}</span>"
-            return ""
-
-        goal_km = settings["goal_km"]
-        total_km = df_month["distance_km"].sum()
-        total_min = df_month["time_min"].sum()
-        total_kcal = df_month["calories"].sum()
-        avg_speed = total_km / (total_min / 60) if total_min else 0
-        workout_days = df_month["date"].dt.date.nunique()
-
-        total_km_prev = df_prev["distance_km"].sum()
-        total_min_prev = df_prev["time_min"].sum()
-        total_kcal_prev = df_prev["calories"].sum()
-        avg_speed_prev = total_km_prev / (total_min_prev / 60) if total_min_prev else 0
-        workout_days_prev = df_prev["date"].dt.date.nunique()
-
-        st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
-        percent = min(total_km / goal_km, 1.0)
-        st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
-              <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
-                {percent*100:.1f}%
-              </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-        st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
-        st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
-        st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
-
-        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
-        vertical_sum = df_month["vertical_feet"].sum()
-        vertical_prev = df_prev["vertical_feet"].sum()
-
-        col_curr, col_prev = st.columns(2)
-        with col_curr:
-            st.markdown("#### This Month")
-            st.markdown(f"🏋️ Workouts: {len(df_month)}")
-            st.markdown(f"🗓️ Active Days: {workout_days}")
-            st.markdown(f"🛣️ Distance: {total_km:.2f} km")
-            st.markdown(f"🧗 Vertical Climb: {vertical_sum:.0f} ft")
-            st.markdown(f"⏱️ Duration: {total_min:.0f} min")
-            st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
-            st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
-
-        with col_prev:
-            st.markdown("#### Last Month")
-            st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-            st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🧗 {vertical_prev:.0f} ft {stat_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
-            st.markdown(f"⏱️ {total_min_prev:.0f} min")
-            st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
-          # ----- Bar Charts for Calories, Distance, Duration -----
-        if not df_month.empty:
-            st.markdown("### 📊 Monthly Breakdown Charts")
-
-            df_bar = df_month.copy()
-            df_bar = df_bar.sort_values("date")
-            labels = df_bar["date"].dt.strftime("%d")
-
-            # Calories Bar Chart
-            fig1, ax1 = plt.subplots()
-            bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
-            ax1.set_title("🔥 Calories by Day")
-            ax1.set_ylabel("kcal")
-            ax1.set_xlabel("Day")
-            for bar in bars1:
-                height = bar.get_height()
-                ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig1)
-
-            # Distance Bar Chart
-            fig2, ax2 = plt.subplots()
-            bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
-            ax2.set_title("🛣️ Distance by Day")
-            ax2.set_ylabel("km")
-            ax2.set_xlabel("Day")
-            for bar in bars2:
-                height = bar.get_height()
-                ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig2)
-
-            # Duration Bar Chart
-            fig3, ax3 = plt.subplots()
-            bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
-            ax3.set_title("⏱️ Duration by Day")
-            ax3.set_ylabel("minutes")
-            ax3.set_xlabel("Day")
-            for bar in bars3:
-                height = bar.get_height()
-                ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig3)
-            # ----- Line Chart for Weight Progress -----
-        if not df.empty:
-            st.markdown("### ⚖️ Weight Progress")
-
-            df_weight = df.copy()
-            df_weight = df_weight.sort_values("date")
-            df_weight = df_weight[df_weight["weight_lbs"].notnull()]
-
-            fig4, ax4 = plt.subplots()
-            ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
-            ax4.set_title("📈 Weight Over Time")
-            ax4.set_ylabel("Weight (lbs)")
-            ax4.set_xlabel("Date")
-            ax4.grid(True)
-
-            # Format x-axis to show fewer, cleaner dates
-            fig4.autofmt_xdate()
-            ax4.tick_params(axis='x', labelrotation=45)
-            st.pyplot(fig4)
-
-
-            
 
