@@ -390,19 +390,17 @@ elif st.session_state.page == "home":
                 st.rerun()
 
     st.markdown("---")
-    col = st.columns(3)[1]
-    with col:
-        if st.button("🏋️ Log Workout"):
-            st.session_state.page = "log"
-            st.rerun()
-        if st.button("📊 My Progress"):
-            st.session_state.page = "progress"
-            st.rerun()
-        if st.button("⚙️ My Settings"):
-            st.session_state.page = "settings"
-            st.rerun()
+    st.markdown("""
+        <div style='text-align:center; margin-top: 20px;'>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["logForm"].submit();'>🏋️ Log Workout</button><br>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["progressForm"].submit();'>📊 My Progress</button><br>
+            <button onclick='window.location.reload()' style='font-size:20px; padding:12px 32px; margin:12px; border-radius:10px; background-color:#444; color:white; border:none; cursor:pointer;' onclick='document.forms["settingsForm"].submit();'>⚙️ My Settings</button>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # Removed hidden buttons used for layout workaround
+    log_btn = st.button("", key="btn_log_hidden")
+    progress_btn = st.button("", key="btn_progress_hidden")
+    settings_btn = st.button("", key="btn_settings_hidden")
 
     if log_btn:
         st.session_state.page = "log"
