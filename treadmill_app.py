@@ -400,7 +400,31 @@ elif st.session_state.page == "settings":
     if st.button("🏠 Home"):
         st.session_state.page = "home"
         st.rerun()
-                height_m = settings["height_cm"] / 100
+
+    st.title("⚙️ My Settings")
+
+    name = st.text_input("Display Name", value=settings.get("name", ""))
+    height = st.number_input("Height (cm)", value=settings.get("height_cm", 175))
+    birth_year = st.number_input("Birth Year", value=settings.get("birth_year", 1991))
+    gender = st.selectbox("Gender", ["Male", "Female"], index=0 if settings.get("gender") == "Male" else 1)
+    goal_km = st.number_input("Monthly Goal (km)", value=settings.get("goal_km", 100))
+    weekly_goal = st.number_input("Weekly Workouts Goal", value=settings.get("weekly_goal", 5))
+    theme = st.selectbox("Theme", ["light", "dark"], index=1 if settings.get("theme") == "dark" else 0)
+
+    if st.button("💾 Save Settings"):
+        new_settings = {
+            "user": st.session_state.user,
+            "name": name,
+            "height_cm": height,
+            "birth_year": birth_year,
+            "gender": gender,
+            "goal_km": goal_km,
+            "weekly_goal": weekly_goal,
+            "theme": theme
+        }
+        save_settings(st.session_state.user, new_settings)
+        st.success("✅ Settings saved!")
+        st.rerun()
         current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
         current_bmi = (current_weight * 0.453592) / (height_m ** 2)
         target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
