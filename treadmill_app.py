@@ -425,138 +425,131 @@ elif st.session_state.page == "settings":
         save_settings(st.session_state.user, new_settings)
         st.success("✅ Settings saved!")
         st.rerun()
-        current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
-        current_bmi = (current_weight * 0.453592) / (height_m ** 2)
-        target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
+        save_settings(st.session_state.user, new_settings)
+        st.success("✅ Settings saved!")
+        st.rerun()
 
-        current_month = st.session_state.selected_month
-        df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
-        prev_month = current_month - relativedelta(months=1)
-        df_prev = df[df["date"].dt.strftime("%Y-%m") == prev_month.strftime("%Y-%m")]
+elif st.session_state.page == "progress":
+    st.title("📊 Progress & Summary")
+    height_m = settings["height_cm"] / 100
+    current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
+    current_bmi = (current_weight * 0.453592) / (height_m ** 2)
+    target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
 
-        def stat_delta(current, previous):
-            if previous == 0: return ""
-            if current > previous:
-                return f"<span style='color:green'>↑ {current - previous:.2f}</span>"
-            elif current < previous:
-                return f"<span style='color:red'>↓ {previous - current:.2f}</span>"
-            return ""
+    current_month = st.session_state.selected_month
+    df_month = df[df["date"].dt.strftime("%Y-%m") == current_month.strftime("%Y-%m")]
+    prev_month = current_month - relativedelta(months=1)
+    df_prev = df[df["date"].dt.strftime("%Y-%m") == prev_month.strftime("%Y-%m")]
 
-        goal_km = settings["goal_km"]
-        total_km = df_month["distance_km"].sum()
-        total_min = df_month["time_min"].sum()
-        total_kcal = df_month["calories"].sum()
-        avg_speed = total_km / (total_min / 60) if total_min else 0
-        workout_days = df_month["date"].dt.date.nunique()
+    def stat_delta(current, previous):
+        if previous == 0: return ""
+        if current > previous:
+            return f"<span style='color:green'>↑ {current - previous:.2f}</span>"
+        elif current < previous:
+            return f"<span style='color:red'>↓ {previous - current:.2f}</span>"
+        return ""
 
-        total_km_prev = df_prev["distance_km"].sum()
-        total_min_prev = df_prev["time_min"].sum()
-        total_kcal_prev = df_prev["calories"].sum()
-        avg_speed_prev = total_km_prev / (total_min_prev / 60) if total_min_prev else 0
-        workout_days_prev = df_prev["date"].dt.date.nunique()
+    goal_km = settings["goal_km"]
+    total_km = df_month["distance_km"].sum()
+    total_min = df_month["time_min"].sum()
+    total_kcal = df_month["calories"].sum()
+    avg_speed = total_km / (total_min / 60) if total_min else 0
+    workout_days = df_month["date"].dt.date.nunique()
 
-        st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
-        percent = min(total_km / goal_km, 1.0)
-        st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
-              <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
-                {percent*100:.1f}%
-              </div>
-            </div>
-        """, unsafe_allow_html=True)
+    total_km_prev = df_prev["distance_km"].sum()
+    total_min_prev = df_prev["time_min"].sum()
+    total_kcal_prev = df_prev["calories"].sum()
+    avg_speed_prev = total_km_prev / (total_min_prev / 60) if total_min_prev else 0
+    workout_days_prev = df_prev["date"].dt.date.nunique()
 
-        st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-        st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
-        st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
-        st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
+    st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
+    percent = min(total_km / goal_km, 1.0)
+    st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
+          <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
+            {percent*100:.1f}%
+          </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
-        vertical_sum = df_month["vertical_feet"].sum()
-        vertical_prev = df_prev["vertical_feet"].sum()
+    st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
+    st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
+    st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
+    st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
 
-        col_curr, col_prev = st.columns(2)
-        with col_curr:
-            st.markdown("#### This Month")
-            st.markdown(f"🏋️ Workouts: {len(df_month)}")
-            st.markdown(f"🗓️ Active Days: {workout_days}")
-            st.markdown(f"🛣️ Distance: {total_km:.2f} km")
-            st.markdown(f"🧗 Vertical Climb: {vertical_sum:.0f} ft")
-            st.markdown(f"⏱️ Duration: {total_min:.0f} min")
-            st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
-            st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
+    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+    vertical_sum = df_month["vertical_feet"].sum()
+    vertical_prev = df_prev["vertical_feet"].sum()
 
-        with col_prev:
-            st.markdown("#### Last Month")
-            st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-            st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🧗 {vertical_prev:.0f} ft {stat_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
-            st.markdown(f"⏱️ {total_min_prev:.0f} min")
-            st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
-            st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
-          # ----- Bar Charts for Calories, Distance, Duration -----
-        if not df_month.empty:
-            st.markdown("### 📊 Monthly Breakdown Charts")
+    col_curr, col_prev = st.columns(2)
+    with col_curr:
+        st.markdown("#### This Month")
+        st.markdown(f"🏋️ Workouts: {len(df_month)}")
+        st.markdown(f"🗓️ Active Days: {workout_days}")
+        st.markdown(f"🛣️ Distance: {total_km:.2f} km")
+        st.markdown(f"🧗 Vertical Climb: {vertical_sum:.0f} ft")
+        st.markdown(f"⏱️ Duration: {total_min:.0f} min")
+        st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal")
+        st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h")
 
-            df_bar = df_month.copy()
-            df_bar = df_bar.sort_values("date")
-            labels = df_bar["date"].dt.strftime("%d")
+    with col_prev:
+        st.markdown("#### Last Month")
+        st.markdown(f"🏋️ {len(df_prev)} {stat_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
+        st.markdown(f"🗓️ {workout_days_prev} {stat_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🛣️ {total_km_prev:.2f} km {stat_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🧗 {vertical_prev:.0f} ft {stat_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
+        st.markdown(f"⏱️ {total_min_prev:.0f} min")
+        st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {stat_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {stat_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
 
-            # Calories Bar Chart
-            fig1, ax1 = plt.subplots()
-            bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
-            ax1.set_title("🔥 Calories by Day")
-            ax1.set_ylabel("kcal")
-            ax1.set_xlabel("Day")
-            for bar in bars1:
-                height = bar.get_height()
-                ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig1)
+    if not df_month.empty:
+        st.markdown("### 📊 Monthly Breakdown Charts")
+        df_bar = df_month.sort_values("date")
+        labels = df_bar["date"].dt.strftime("%d")
 
-            # Distance Bar Chart
-            fig2, ax2 = plt.subplots()
-            bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
-            ax2.set_title("🛣️ Distance by Day")
-            ax2.set_ylabel("km")
-            ax2.set_xlabel("Day")
-            for bar in bars2:
-                height = bar.get_height()
-                ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig2)
+        fig1, ax1 = plt.subplots()
+        bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
+        ax1.set_title("🔥 Calories by Day")
+        ax1.set_ylabel("kcal")
+        ax1.set_xlabel("Day")
+        for bar in bars1:
+            height = bar.get_height()
+            ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig1)
 
-            # Duration Bar Chart
-            fig3, ax3 = plt.subplots()
-            bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
-            ax3.set_title("⏱️ Duration by Day")
-            ax3.set_ylabel("minutes")
-            ax3.set_xlabel("Day")
-            for bar in bars3:
-                height = bar.get_height()
-                ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                             xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            st.pyplot(fig3)
-            # ----- Line Chart for Weight Progress -----
-        if not df.empty:
-            st.markdown("### ⚖️ Weight Progress")
+        fig2, ax2 = plt.subplots()
+        bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
+        ax2.set_title("🛣️ Distance by Day")
+        ax2.set_ylabel("km")
+        ax2.set_xlabel("Day")
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig2)
 
-            df_weight = df.copy()
-            df_weight = df_weight.sort_values("date")
-            df_weight = df_weight[df_weight["weight_lbs"].notnull()]
+        fig3, ax3 = plt.subplots()
+        bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
+        ax3.set_title("⏱️ Duration by Day")
+        ax3.set_ylabel("minutes")
+        ax3.set_xlabel("Day")
+        for bar in bars3:
+            height = bar.get_height()
+            ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig3)
 
-            fig4, ax4 = plt.subplots()
-            ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
-            ax4.set_title("📈 Weight Over Time")
-            ax4.set_ylabel("Weight (lbs)")
-            ax4.set_xlabel("Date")
-            ax4.grid(True)
-
-            # Format x-axis to show fewer, cleaner dates
-            fig4.autofmt_xdate()
-            ax4.tick_params(axis='x', labelrotation=45)
-            st.pyplot(fig4)
+    if not df.empty:
+        st.markdown("### ⚖️ Weight Progress")
+        df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
+        fig4, ax4 = plt.subplots()
+        ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
+        ax4.set_title("📈 Weight Over Time")
+        ax4.set_ylabel("Weight (lbs)")
+        ax4.set_xlabel("Date")
+        ax4.grid(True)
+        fig4.autofmt_xdate()
+        ax4.tick_params(axis='x', labelrotation=45)
+        st.pyplot(fig4)
 
 
             
