@@ -195,6 +195,11 @@ if os.path.exists(LOGO_FILE):
     st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
+col = st.columns(3)[1]
+with col:
+    if st.button("🏠 Home", key="home_top_progress"):
+        st.session_state.page = "home"
+        st.rerun()
 
 # ─── LOG WORKOUT ───
 if st.session_state.page == "log":
