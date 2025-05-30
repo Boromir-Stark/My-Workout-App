@@ -14,7 +14,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # ─── APP SETUP ───
-st.set_page_config(page_title="My Workout Tracker", layout="centered")
+st.set_page_config(page_title="My Activity Tracker", layout="centered")
 
 LOGO_FILE = "app_logo.png"
 SHEET_ID = "1beo7KZ7eDUl8tfK5DqZ0JMYiGuWApMIoVCarljUhCBo"
@@ -52,8 +52,7 @@ if "user" not in st.session_state:
     st.session_state.user = "Default"
 if "df" not in st.session_state:
     st.session_state.df = None
-
-# ─── DATA HELPERS ───
+    # ─── DATA HELPERS ───
 def load_data(user_id):
     try:
         data = sheet.worksheet(WORKOUT_TAB).get_all_records()
@@ -88,6 +87,8 @@ def save_data(user_id, df_new_rows):
 
     except Exception as e:
         st.error(f"Workout Save Error: {e}")
+
+
 def load_settings(user_id):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -119,6 +120,7 @@ def load_settings(user_id):
             "weekly_goal": 5
         }
 
+
 def save_settings(user_id, settings):
     try:
         ws = sheet.worksheet(SETTINGS_TAB)
@@ -130,6 +132,7 @@ def save_settings(user_id, settings):
     except Exception as e:
         st.error(f"Settings Save Error: {e}")
 
+
 def parse_float(value, label, required=True):
     try:
         value = value.strip()
@@ -140,14 +143,14 @@ def parse_float(value, label, required=True):
         st.error(f"❌ Invalid input for {label}. Please enter a number.")
         return None
 
+
 def get_all_users_with_names():
     try:
         records = sheet.worksheet(SETTINGS_TAB).get_all_records()
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except Exception:
         return []
-
-# ─── USER SELECTION ───
+        # ─── USER SELECTION ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
 display_names = [name for _, name in user_list]
@@ -194,14 +197,13 @@ if os.path.exists(LOGO_FILE):
         encoded = base64.b64encode(img_file.read()).decode()
     st.markdown(f"<div style='text-align:center;'><img src='data:image/png;base64,{encoded}' width='140'/></div>", unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align:center;'>My Workout Tracker</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;'>My Activity Tracker</h1>", unsafe_allow_html=True)
 if st.session_state.page != "home":
     col = st.columns(3)[1]
     with col:
         if st.button("🏠 Home", key="home_top_progress"):
             st.session_state.page = "home"
             st.rerun()
-
 # ─── LOG WORKOUT ───
 if st.session_state.page == "log":
     with st.form("log_form"):
@@ -219,7 +221,7 @@ if st.session_state.page == "log":
             unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
 
         vertical = st.text_input("Vertical Distance (ft)")
-        activity = st.selectbox("Activity Type", ["Walk", "Rollerblade"], index=0)
+        activity = st.selectbox("Activity Type", ["Walk", "Rollerblade", "Stationary Bike"], index=0)
 
         submitted = st.form_submit_button("Save Workout")
 
@@ -240,7 +242,12 @@ if st.session_state.page == "log":
                     w_kg = w * 0.453592
                     time_hr = t / 60
 
-                    MET = 3.5 if activity == "Walk" else 9.0
+                    MET = 3.5
+                    if activity == "Rollerblade":
+                        MET = 9.0
+                    elif activity == "Stationary Bike":
+                        MET = 7.5
+
                     cal_flat = MET * w_kg * time_hr
 
                     cal_climb = 0
@@ -269,7 +276,7 @@ if st.session_state.page == "log":
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
-# ─── HOME PAGE ───
+    # ─── HOME PAGE ───
 elif st.session_state.page == "home":
     local_tz = pytz.timezone("America/Toronto")
     today = datetime.now(local_tz).date()
@@ -371,8 +378,7 @@ elif st.session_state.page == "home":
                         st.session_state.log_for_date = day
                         st.session_state.page = "log"
                         st.rerun()
-
-    if st.session_state.selected_day:
+                            if st.session_state.selected_day:
         st.markdown("---")
         selected = st.session_state.selected_day
         match = df[df["date"].dt.date == selected]
@@ -403,13 +409,8 @@ elif st.session_state.page == "home":
         if st.button("⚙️ My Settings"):
             st.session_state.page = "settings"
             st.rerun()
-
-    # Removed hidden buttons used for layout workaround
-
-# ─── SETTINGS PAGE ───
+            # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
-    
-
     st.title("⚙️ My Settings")
 
     name = st.text_input("Display Name", value=settings.get("name", ""))
@@ -434,10 +435,7 @@ elif st.session_state.page == "settings":
         save_settings(st.session_state.user, new_settings)
         st.success("✅ Settings saved!")
         st.rerun()
-        save_settings(st.session_state.user, new_settings)
-        st.success("✅ Settings saved!")
-        st.rerun()
-
+        # ─── PROGRESS PAGE ───
 elif st.session_state.page == "progress":
     st.title("📊 My Progress")
     height_m = settings["height_cm"] / 100
@@ -486,8 +484,7 @@ elif st.session_state.page == "progress":
     st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
     st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
     st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
-
-    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
     vertical_sum = df_month["vertical_feet"].sum()
     vertical_prev = df_prev["vertical_feet"].sum()
 
@@ -560,7 +557,6 @@ elif st.session_state.page == "progress":
         ax4.tick_params(axis='x', labelrotation=45)
         st.pyplot(fig4)
 
-        # Centered Home button below all content
         col = st.columns(3)[1]
         with col:
             if st.button("🏠 Home"):
@@ -568,4 +564,7 @@ elif st.session_state.page == "progress":
                 st.rerun()
 
 
-            
+
+
+
+
