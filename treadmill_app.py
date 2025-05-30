@@ -381,7 +381,8 @@ elif st.session_state.page == "home":
                     if st.session_state.selected_day:
                         st.markdown("---")
                         selected = st.session_state.selected_day
-                        match = df[df["date"].dt.date == selected]
+                            try:
+        match = df[df["date"].dt.date == selected]
         if not match.empty:
             row = match.iloc[0]
             st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
@@ -390,6 +391,14 @@ elif st.session_state.page == "home":
             st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
             st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
             st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
+        else:
+            st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
+            if st.button("Log Workout for this Day"):
+                st.session_state.log_for_date = selected
+                st.session_state.page = "log"
+                st.rerun()
+    except Exception as e:
+        st.error("⚠️ Unable to load summary for selected day.")
         else:
             st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
             if st.button("Log Workout for this Day"):
