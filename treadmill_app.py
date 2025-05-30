@@ -207,7 +207,7 @@ if st.session_state.page != "home":
 # ─── LOG WORKOUT ───
 if st.session_state.page == "log":
     with st.form("log_form"):
-        st.title("🏋️ Log Workout")
+        st.title("🏋️ Log Activity")
 
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
