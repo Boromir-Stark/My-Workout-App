@@ -378,29 +378,29 @@ elif st.session_state.page == "home":
                         st.session_state.log_for_date = day
                         st.session_state.page = "log"
                         st.rerun()
-                        if st.session_state.selected_day:
-                            st.markdown("---")
-                            selected = st.session_state.selected_day
+if st.session_state.selected_day:
+    st.markdown("---")
+    selected = st.session_state.selected_day
+
     try:
         match = df[df["date"].dt.date == selected]
-        if not match.empty:
-            row = match.iloc[0]
-            st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
-            st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
-            st.markdown(f"- Duration: `{row['time_min']} min`")
-            st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
-            st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
-            st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
-        else:
-            st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
-            if st.button("Log Workout for this Day"):
-                st.session_state.log_for_date = selected
-                st.session_state.page = "log"
-                st.rerun()
-    except Exception as e:
-        st.error("⚠️ Unable to load summary for selected day.")
+    except Exception:
+        match = pd.DataFrame()
 
-                        
+    if not match.empty:
+        row = match.iloc[0]
+        st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
+        st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
+        st.markdown(f"- Duration: `{row['time_min']} min`")
+        st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
+        st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
+        st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
+    else:
+        st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
+        if st.button("Log Workout for this Day"):
+            st.session_state.log_for_date = selected
+            st.session_state.page = "log"
+            st.rerun()
         else:
             st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
             if st.button("Log Workout for this Day"):
