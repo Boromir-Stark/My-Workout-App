@@ -378,10 +378,10 @@ elif st.session_state.page == "home":
                         st.session_state.log_for_date = day
                         st.session_state.page = "log"
                         st.rerun()
-                            if st.session_state.selected_day:
-        st.markdown("---")
-        selected = st.session_state.selected_day
-        match = df[df["date"].dt.date == selected]
+                    if st.session_state.selected_day:
+                        st.markdown("---")
+                        selected = st.session_state.selected_day
+                        match = df[df["date"].dt.date == selected]
         if not match.empty:
             row = match.iloc[0]
             st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
