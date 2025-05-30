@@ -282,7 +282,7 @@ elif st.session_state.page == "home":
     today = datetime.now(local_tz).date()
     current_month = st.session_state.selected_month
 
-    st.markdown("### 📆 Monthly Workout Calendar")
+    st.markdown("### 📆 Monthly Activity Calendar")
 
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
