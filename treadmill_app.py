@@ -30,8 +30,11 @@ BORDER = "#2196f3"
 # ─── GOOGLE SHEETS AUTH ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 gcp_info = dict(st.secrets["gcp"])
-iif "\\n" in gcp_info["private_key"]:
+
+# Restore correct newline format if key was escaped
+if "\\n" in gcp_info["private_key"]:
     gcp_info["private_key"] = gcp_info["private_key"].replace("\\n", "\n")
+
 credentials = ServiceAccountCredentials.from_json_keyfile_dict(gcp_info, scope)
 gc = gspread.authorize(credentials)
 
