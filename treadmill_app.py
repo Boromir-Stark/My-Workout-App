@@ -484,7 +484,7 @@ elif st.session_state.page == "progress":
     st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
     st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
     st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
-        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
     vertical_sum = df_month["vertical_feet"].sum()
     vertical_prev = df_prev["vertical_feet"].sum()
 
