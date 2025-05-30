@@ -271,7 +271,7 @@ if st.session_state.page == "log":
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
-    # ─── HOME PAGE ───
+# ─── HOME PAGE ───
 elif st.session_state.page == "home":
     local_tz = pytz.timezone("America/Toronto")
     today = datetime.now(local_tz).date()
@@ -404,7 +404,7 @@ if st.session_state.page == "home":
     st.markdown("---")
     col = st.columns(3)[1]
     with col:
-        if st.button("🏋️ Log Workout"):
+        if st.button("🏋️ Log Activity"):
             st.session_state.page = "log"
             st.rerun()
         if st.button("📊 My Progress"):
