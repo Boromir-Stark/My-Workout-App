@@ -295,7 +295,7 @@ elif st.session_state.page == "home":
 
     st.markdown(f"""
         <div style="text-align:center; font-size:26px; font-weight:bold; color:#87F3F8; margin-bottom:12px;">
-            Weekly Workouts:
+            Weekly Activities:
             <span style="color:{get_week_color(weekly_count)};">{weekly_count}</span> / {weekly_goal}
         </div>
     """, unsafe_allow_html=True)
