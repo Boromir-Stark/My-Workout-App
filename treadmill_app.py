@@ -379,8 +379,8 @@ elif st.session_state.page == "home":
                         st.session_state.page = "log"
                         st.rerun()
                         if st.session_state.selected_day:
-    st.markdown("---")
-    selected = st.session_state.selected_day
+                            st.markdown("---")
+                            selected = st.session_state.selected_day
     try:
         match = df[df["date"].dt.date == selected]
         if not match.empty:
