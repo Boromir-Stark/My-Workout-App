@@ -200,41 +200,35 @@ if st.session_state.page != "home":
             st.session_state.page = "home"
             st.rerun()
 
-if st.session_state.page == "log":
+elif st.session_state.page == "log":
+    st.title("🏋️ Log Activity")
+
+    # Activity selection first, outside the form
+    activity = st.selectbox("Activity Type", [
+        "Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"
+    ])
+    requires_distance = activity in ["Walk", "Rollerblade", "Stationary Bike"]
+    requires_vertical = activity in ["Walk", "Rollerblade", "Stationary Bike"]
+    needs_intensity = activity in ["Basketball (21)", "Spikeball", "Soccer"]
+
     with st.form("log_form"):
-        st.title("🏋️ Log Activity")
-
-        activity = st.selectbox("Activity Type", [
-            "Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"
-        ])
-
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
         weight = st.text_input("Weight (lbs)", value=str(last_weight))
         time = st.text_input("Time (min)")
 
-        requires_distance = activity in ["Walk", "Rollerblade", "Stationary Bike"]
-        requires_vertical = activity in ["Walk", "Rollerblade", "Stationary Bike"]
-
+        distance = None
+        unit = "km"
         if requires_distance:
             distance_col1, distance_col2 = st.columns([3, 1])
             with distance_col1:
                 distance = st.text_input("Distance")
             with distance_col2:
                 unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
-        else:
-            distance = None
-            unit = "km"
 
-        if requires_vertical:
-            vertical = st.text_input("Vertical Distance (ft)")
-        else:
-            vertical = None
+        vertical = st.text_input("Vertical Distance (ft)") if requires_vertical else None
 
-        if activity in ["Basketball (21)", "Spikeball", "Soccer"]:
-            intensity = st.selectbox("Intensity", ["Low", "Moderate", "High"])
-        else:
-            intensity = None
+        intensity = st.selectbox("Intensity", ["Low", "Moderate", "High"]) if needs_intensity else None
 
         submitted = st.form_submit_button("Save Activity")
 
