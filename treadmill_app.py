@@ -613,18 +613,18 @@ elif st.session_state.page == "progress":
     st.pyplot(fig3)
 
 # ─── Weight Progress ───
-if not df.empty:
-    st.markdown("<h3 style='text-align:center;'>⚖️ Weight Progress</h3>", unsafe_allow_html=True)
-    df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
-    fig4, ax4 = plt.subplots()
-    ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
-    ax4.set_title("📈 Weight Over Time")
-    ax4.set_ylabel("Weight (lbs)")
-    ax4.set_xlabel("Date")
-    ax4.grid(True)
-    fig4.autofmt_xdate()
-    ax4.tick_params(axis='x', labelrotation=45)
-    st.pyplot(fig4)
+    if not df.empty:
+        st.markdown("<h3 style='text-align:center;'>⚖️ Weight Progress</h3>", unsafe_allow_html=True)
+        df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
+        fig4, ax4 = plt.subplots()
+        ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
+        ax4.set_title("📈 Weight Over Time")
+        ax4.set_ylabel("Weight (lbs)")
+        ax4.set_xlabel("Date")
+        ax4.grid(True)
+        fig4.autofmt_xdate()
+        ax4.tick_params(axis='x', labelrotation=45)
+        st.pyplot(fig4)
 
     col = st.columns(3)[1]
     with col:
