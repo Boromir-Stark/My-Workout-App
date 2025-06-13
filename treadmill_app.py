@@ -627,5 +627,6 @@ elif st.session_state.page == "progress":
         ax2.set_ylabel("km")
         ax2.set_xlabel("Day")
         for bar in bars2:
-            height = bar.get_hei_
+            bar.get_height()
+
 
