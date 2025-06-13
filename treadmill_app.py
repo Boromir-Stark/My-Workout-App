@@ -528,28 +528,68 @@ elif st.session_state.page == "progress":
     st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
 
-    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
-    col_curr, col_prev = st.columns(2)
+        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
 
-    with col_curr:
-        st.markdown("#### This Month")
-        st.markdown(f"🏋️ Workouts: <strong>{len(df_month)}</strong>{raw_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-        st.markdown(f"🗓️ Active Days: <strong>{workout_days}</strong>{raw_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🛣️ Distance: <strong>{total_km:.2f} km</strong>{raw_delta(total_km, total_km_prev, ' km')}", unsafe_allow_html=True)
-        st.markdown(f"🧗 Vertical Climb: <strong>{vertical_sum:.0f} ft</strong>{raw_delta(vertical_sum, vertical_prev, ' ft')}", unsafe_allow_html=True)
-        st.markdown(f"⏱️ Duration: <strong>{total_min:.0f} min</strong>{raw_delta(total_min, total_min_prev, ' min')}", unsafe_allow_html=True)
-        st.markdown(f"🔥 Calories: <strong>{total_kcal:.0f} kcal</strong>{raw_delta(total_kcal, total_kcal_prev, ' kcal')}", unsafe_allow_html=True)
-        st.markdown(f"🚀 Avg Speed: <strong>{avg_speed:.2f} km/h</strong>{raw_delta(avg_speed, avg_speed_prev, ' km/h')}", unsafe_allow_html=True)
+    metrics = [
+        {
+            "label": "🏋️ Workouts",
+            "this": len(df_month),
+            "last": len(df_prev),
+            "unit": "",
+        },
+        {
+            "label": "🗓️ Active Days",
+            "this": workout_days,
+            "last": workout_days_prev,
+            "unit": "",
+        },
+        {
+            "label": "🛣️ Distance",
+            "this": total_km,
+            "last": total_km_prev,
+            "unit": " km",
+            "fmt": "{:.2f}"
+        },
+        {
+            "label": "🧗 Vertical Climb",
+            "this": vertical_sum,
+            "last": vertical_prev,
+            "unit": " ft"
+        },
+        {
+            "label": "⏱️ Duration",
+            "this": total_min,
+            "last": total_min_prev,
+            "unit": " min"
+        },
+        {
+            "label": "🔥 Calories",
+            "this": total_kcal,
+            "last": total_kcal_prev,
+            "unit": " kcal"
+        },
+        {
+            "label": "🚀 Avg Speed",
+            "this": avg_speed,
+            "last": avg_speed_prev,
+            "unit": " km/h",
+            "fmt": "{:.2f}"
+        },
+    ]
 
-    with col_prev:
-        st.markdown("#### Last Month")
-        st.markdown(f"🏋️ <strong>{len(df_prev)}</strong>{percent_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-        st.markdown(f"🗓️ <strong>{workout_days_prev}</strong>{percent_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🛣️ <strong>{total_km_prev:.2f} km</strong>{percent_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🧗 <strong>{vertical_prev:.0f} ft</strong>{percent_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
-        st.markdown(f"⏱️ <strong>{total_min_prev:.0f} min</strong>{percent_delta(total_min, total_min_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🔥 <strong>{total_kcal_prev:.0f} kcal</strong>{percent_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🚀 <strong>{avg_speed_prev:.2f} km/h</strong>{percent_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
+    for metric in metrics:
+        label = metric["label"]
+        val_this = metric["this"]
+        val_last = metric["last"]
+        unit = metric.get("unit", "")
+        fmt = metric.get("fmt", "{:.0f}")
+
+        this_value = fmt.format(val_this)
+        last_value = fmt.format(val_last)
+
+        st.markdown(f"### {label}", unsafe_allow_html=True)
+        st.markdown(f"- <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
+        st.markdown(f"- <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
 
     if not df_month.empty:
         st.markdown("### 📊 Monthly Breakdown Charts")
