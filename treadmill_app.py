@@ -528,68 +528,83 @@ elif st.session_state.page == "progress":
     st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
 
-    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
 
     metrics = [
         {
-            "label": "🏋️ Workouts",
+            "label": "Workouts",
+            "icon": "🏋️",
             "this": len(df_month),
             "last": len(df_prev),
-            "unit": "",
+            "unit": ""
         },
         {
-            "label": "🗓️ Active Days",
+            "label": "Active Days",
+            "icon": "🗓️",
             "this": workout_days,
             "last": workout_days_prev,
-            "unit": "",
+            "unit": ""
         },
         {
-            "label": "🛣️ Distance",
+            "label": "Distance",
+            "icon": "🛣️",
             "this": total_km,
             "last": total_km_prev,
             "unit": " km",
             "fmt": "{:.2f}"
         },
         {
-            "label": "🧗 Vertical Climb",
+            "label": "Vertical Climb",
+            "icon": "🧗",
             "this": vertical_sum,
             "last": vertical_prev,
             "unit": " ft"
         },
         {
-            "label": "⏱️ Duration",
+            "label": "Duration",
+            "icon": "⏱️",
             "this": total_min,
             "last": total_min_prev,
             "unit": " min"
         },
         {
-            "label": "🔥 Calories",
+            "label": "Calories",
+            "icon": "🔥",
             "this": total_kcal,
             "last": total_kcal_prev,
             "unit": " kcal"
         },
         {
-            "label": "🚀 Avg Speed",
+            "label": "Avg Speed",
+            "icon": "🚀",
             "this": avg_speed,
             "last": avg_speed_prev,
             "unit": " km/h",
             "fmt": "{:.2f}"
-        },
+        }
     ]
 
-    for metric in metrics:
-        label = metric["label"]
-        val_this = metric["this"]
-        val_last = metric["last"]
-        unit = metric.get("unit", "")
-        fmt = metric.get("fmt", "{:.0f}")
+    # Split metrics evenly into 2 columns
+    col1, col2 = st.columns(2)
+    half = (len(metrics) + 1) // 2
 
-        this_value = fmt.format(val_this)
-        last_value = fmt.format(val_last)
+    for idx, metric in enumerate(metrics):
+        col = col1 if idx < half else col2
+        with col:
+            label = metric["label"]
+            icon = metric["icon"]
+            val_this = metric["this"]
+            val_last = metric["last"]
+            unit = metric.get("unit", "")
+            fmt = metric.get("fmt", "{:.0f}")
 
-        st.markdown(f"### {label}", unsafe_allow_html=True)
-        st.markdown(f"- <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
-        st.markdown(f"- <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
+            this_value = fmt.format(val_this)
+            last_value = fmt.format(val_last)
+
+            st.markdown(f"<h5 style='margin-bottom:0.2rem'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
+            st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
+            st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
+
 
     if not df_month.empty:
         st.markdown("### 📊 Monthly Breakdown Charts")
