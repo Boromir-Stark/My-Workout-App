@@ -607,10 +607,11 @@ elif st.session_state.page == "progress":
 
 
     if not df_month.empty:
-        st.markdown("### 📊 Monthly Breakdown Charts")
+        st.markdown("<h3 style='text-align:center;'>📊 Monthly Breakdown Charts</h3>", unsafe_allow_html=True)
         df_bar = df_month.sort_values("date")
         labels = df_bar["date"].dt.strftime("%d")
 
+        # 🔥 Calories Chart
         fig1, ax1 = plt.subplots()
         bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
         ax1.set_title("🔥 Calories by Day")
@@ -618,15 +619,49 @@ elif st.session_state.page == "progress":
         ax1.set_xlabel("Day")
         for bar in bars1:
             height = bar.get_height()
-            ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+            ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
         st.pyplot(fig1)
 
+        # 🛣️ Distance Chart
         fig2, ax2 = plt.subplots()
         bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
         ax2.set_title("🛣️ Distance by Day")
         ax2.set_ylabel("km")
         ax2.set_xlabel("Day")
         for bar in bars2:
-            bar.get_height()
+            height = bar.get_height()
+            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig2)
 
+        # ⏱️ Duration Chart
+        fig3, ax3 = plt.subplots()
+        bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
+        ax3.set_title("⏱️ Duration by Day")
+        ax3.set_ylabel("minutes")
+        ax3.set_xlabel("Day")
+        for bar in bars3:
+            height = bar.get_height()
+            ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig3)
 
+    if not df.empty:
+        st.markdown("<h3 style='text-align:center;'>⚖️ Weight Progress</h3>", unsafe_allow_html=True)
+        df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
+        fig4, ax4 = plt.subplots()
+        ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
+        ax4.set_title("📈 Weight Over Time")
+        ax4.set_ylabel("Weight (lbs)")
+        ax4.set_xlabel("Date")
+        ax4.grid(True)
+        fig4.autofmt_xdate()
+        ax4.tick_params(axis='x', labelrotation=45)
+        st.pyplot(fig4)
+
+        col = st.columns(3)[1]
+        with col:
+            if st.button("🏠 Home"):
+                st.session_state.page = "home"
+                st.rerun()
