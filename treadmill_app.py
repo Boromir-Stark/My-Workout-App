@@ -571,10 +571,10 @@ elif st.session_state.page == "progress":
     
 
 # ─── Monthly Breakdown Charts ───
-if not df_month.empty:
-    st.markdown("<h3 style='text-align:center;'>📊 Monthly Breakdown Charts</h3>", unsafe_allow_html=True)
-    df_bar = df_month.sort_values("date")
-    labels = df_bar["date"].dt.strftime("%d")
+    if not df_month.empty:
+        st.markdown("<h3 style='text-align:center;'>📊 Monthly Breakdown Charts</h3>", unsafe_allow_html=True)
+        df_bar = df_month.sort_values("date")
+        labels = df_bar["date"].dt.strftime("%d")
 
     # 🔥 Calories Chart
     fig1, ax1 = plt.subplots()
