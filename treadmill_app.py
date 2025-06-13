@@ -200,13 +200,20 @@ if st.session_state.page != "home":
             st.session_state.page = "home"
             st.rerun()
 
-elif st.session_state.page == "log":
+if st.session_state.page == "log":
     st.title("🏋️ Log Activity")
 
-    # Activity selection first, outside the form
-    activity = st.selectbox("Activity Type", [
-        "Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"
-    ])
+    # Persist activity selection across reruns
+    if "log_activity_type" not in st.session_state:
+        st.session_state.log_activity_type = "Walk"
+
+    st.session_state.log_activity_type = st.selectbox(
+        "Activity Type",
+        ["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"],
+        index=["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"].index(st.session_state.log_activity_type)
+    )
+
+    activity = st.session_state.log_activity_type
     requires_distance = activity in ["Walk", "Rollerblade", "Stationary Bike"]
     requires_vertical = activity in ["Walk", "Rollerblade", "Stationary Bike"]
     needs_intensity = activity in ["Basketball (21)", "Spikeball", "Soccer"]
@@ -227,7 +234,6 @@ elif st.session_state.page == "log":
                 unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
 
         vertical = st.text_input("Vertical Distance (ft)") if requires_vertical else None
-
         intensity = st.selectbox("Intensity", ["Low", "Moderate", "High"]) if needs_intensity else None
 
         submitted = st.form_submit_button("Save Activity")
