@@ -203,7 +203,6 @@ if st.session_state.page != "home":
 if st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Activity")
-
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
         weight = st.text_input("Weight (lbs)", value=str(last_weight))
@@ -215,8 +214,12 @@ if st.session_state.page == "log":
         with distance_col2:
             unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
 
-        vertical = st.text_input("Vertical Distance (ft)")
-        activity = st.selectbox("Activity Type", ["Walk", "Rollerblade", "Stationary Bike"], index=0)
+        vertical = st.text_input("Vertical Distance (ft)", value="")
+        activity = st.selectbox("Activity Type", ["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"])
+
+        intensity = None
+        if activity in ["Basketball (21)", "Spikeball", "Soccer"]:
+            intensity = st.selectbox("Intensity", ["Low", "Moderate", "High"])
 
         submitted = st.form_submit_button("Save Activity")
 
@@ -224,7 +227,6 @@ if st.session_state.page == "log":
             if date > datetime.today().date():
                 st.error("🚫 Cannot log an activity in the future.")
             else:
-                st.session_state.log_for_date = date
                 w = parse_float(weight, "Weight")
                 t = parse_float(time, "Time")
                 d = parse_float(distance, "Distance")
@@ -238,18 +240,20 @@ if st.session_state.page == "log":
                     time_hr = t / 60
 
                     MET = 3.5
-                    if activity == "Rollerblade":
-                        MET = 9.0
-                    elif activity == "Stationary Bike":
-                        MET = 7.5
+                    if activity == "Rollerblade": MET = 9.0
+                    elif activity == "Stationary Bike": MET = 7.5
+                    elif activity == "Basketball (21)":
+                        MET = {"Low": 4.5, "Moderate": 6.5, "High": 8.0}[intensity]
+                    elif activity == "Spikeball":
+                        MET = {"Low": 5.0, "Moderate": 6.5, "High": 8.0}[intensity]
+                    elif activity == "Soccer":
+                        MET = {"Low": 7.0, "Moderate": 10.0, "High": 12.0}[intensity]
 
                     cal_flat = MET * w_kg * time_hr
-
                     cal_climb = 0
                     if vert is not None:
                         vertical_m = vert * 0.3048
                         cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
-
                     kcal = cal_flat + cal_climb
 
                     parsed_date = pd.to_datetime(date)
@@ -267,7 +271,6 @@ if st.session_state.page == "log":
                     df_new = pd.DataFrame([new_row])
                     save_data(st.session_state.user, df_new)
                     st.success("✅ Workout saved!")
-
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
