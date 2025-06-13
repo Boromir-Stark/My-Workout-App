@@ -480,17 +480,21 @@ elif st.session_state.page == "progress":
         if previous == 0:
             return ""
         delta = current - previous
+        if delta == 0:
+            return "<span style='color:gray; font-size:90%; margin-left:6px;'>→ 0</span>"
         color = "green" if delta > 0 else "red"
         sign = "↑" if delta > 0 else "↓"
-        return f"<span style='color:{color}'>{sign} {abs(delta):.0f}{unit}</span>"
+        return f"<span style='color:{color}; font-size:90%; margin-left:6px;'>{sign} {abs(delta):.0f}{unit}</span>"
 
     def percent_delta(current, previous):
         if previous == 0:
             return ""
-        percent = ((current - previous) / previous) * 100
-        color = "green" if percent > 0 else "red"
-        sign = "↑" if percent > 0 else "↓"
-        return f"<span style='color:{color}'>{sign} {abs(percent):.1f}%</span>"
+        delta = ((current - previous) / previous) * 100
+        if delta == 0:
+            return "<span style='color:gray; font-size:90%; margin-left:6px;'>→ 0%</span>"
+        color = "green" if delta > 0 else "red"
+        sign = "↑" if delta > 0 else "↓"
+        return f"<span style='color:{color}; font-size:90%; margin-left:6px;'>{sign} {abs(delta):.1f}%</span>"
 
     goal_km = settings["goal_km"]
     total_km = df_month["distance_km"].sum()
@@ -509,7 +513,7 @@ elif st.session_state.page == "progress":
 
     st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
     percent = min(total_km / goal_km, 1.0)
-    st.markdown(f"<div style='font-size:20px;'>{total_km:.1f} km of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size:20px;'><strong>{total_km:.1f} km</strong> of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
     st.markdown(f"""
         <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
           <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
@@ -519,32 +523,32 @@ elif st.session_state.page == "progress":
     """, unsafe_allow_html=True)
 
     st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-    st.markdown(f"📉 **Current BMI:** {current_bmi:.1f} vs Target: {TARGET_BMI}")
-    st.markdown(f"⚖️ **Current Weight:** {current_weight:.1f} lbs")
-    st.markdown(f"🎯 **Target Weight:** {target_weight:.0f} lbs")
+    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}")
+    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs")
+    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs")
 
     st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
     col_curr, col_prev = st.columns(2)
 
     with col_curr:
         st.markdown("#### This Month")
-        st.markdown(f"🏋️ Workouts: {len(df_month)} {raw_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-        st.markdown(f"🗓️ Active Days: {workout_days} {raw_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🛣️ Distance: {total_km:.2f} km {raw_delta(total_km, total_km_prev, ' km')}", unsafe_allow_html=True)
-        st.markdown(f"🧗 Vertical Climb: {vertical_sum:.0f} ft {raw_delta(vertical_sum, vertical_prev, ' ft')}", unsafe_allow_html=True)
-        st.markdown(f"⏱️ Duration: {total_min:.0f} min {raw_delta(total_min, total_min_prev, ' min')}", unsafe_allow_html=True)
-        st.markdown(f"🔥 Calories: {total_kcal:.0f} kcal {raw_delta(total_kcal, total_kcal_prev, ' kcal')}", unsafe_allow_html=True)
-        st.markdown(f"🚀 Avg Speed: {avg_speed:.2f} km/h {raw_delta(avg_speed, avg_speed_prev, ' km/h')}", unsafe_allow_html=True)
+        st.markdown(f"🏋️ Workouts: <strong>{len(df_month)}</strong>{raw_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
+        st.markdown(f"🗓️ Active Days: <strong>{workout_days}</strong>{raw_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🛣️ Distance: <strong>{total_km:.2f} km</strong>{raw_delta(total_km, total_km_prev, ' km')}", unsafe_allow_html=True)
+        st.markdown(f"🧗 Vertical Climb: <strong>{vertical_sum:.0f} ft</strong>{raw_delta(vertical_sum, vertical_prev, ' ft')}", unsafe_allow_html=True)
+        st.markdown(f"⏱️ Duration: <strong>{total_min:.0f} min</strong>{raw_delta(total_min, total_min_prev, ' min')}", unsafe_allow_html=True)
+        st.markdown(f"🔥 Calories: <strong>{total_kcal:.0f} kcal</strong>{raw_delta(total_kcal, total_kcal_prev, ' kcal')}", unsafe_allow_html=True)
+        st.markdown(f"🚀 Avg Speed: <strong>{avg_speed:.2f} km/h</strong>{raw_delta(avg_speed, avg_speed_prev, ' km/h')}", unsafe_allow_html=True)
 
     with col_prev:
         st.markdown("#### Last Month")
-        st.markdown(f"🏋️ {len(df_prev)} {percent_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
-        st.markdown(f"🗓️ {workout_days_prev} {percent_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🛣️ {total_km_prev:.2f} km {percent_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🧗 {vertical_prev:.0f} ft {percent_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
-        st.markdown(f"⏱️ {total_min_prev:.0f} min {percent_delta(total_min, total_min_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🔥 {total_kcal_prev:.0f} kcal {percent_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
-        st.markdown(f"🚀 {avg_speed_prev:.2f} km/h {percent_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🏋️ <strong>{len(df_prev)}</strong>{percent_delta(len(df_month), len(df_prev))}", unsafe_allow_html=True)
+        st.markdown(f"🗓️ <strong>{workout_days_prev}</strong>{percent_delta(workout_days, workout_days_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🛣️ <strong>{total_km_prev:.2f} km</strong>{percent_delta(total_km, total_km_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🧗 <strong>{vertical_prev:.0f} ft</strong>{percent_delta(vertical_sum, vertical_prev)}", unsafe_allow_html=True)
+        st.markdown(f"⏱️ <strong>{total_min_prev:.0f} min</strong>{percent_delta(total_min, total_min_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🔥 <strong>{total_kcal_prev:.0f} kcal</strong>{percent_delta(total_kcal, total_kcal_prev)}", unsafe_allow_html=True)
+        st.markdown(f"🚀 <strong>{avg_speed_prev:.2f} km/h</strong>{percent_delta(avg_speed, avg_speed_prev)}", unsafe_allow_html=True)
 
     if not df_month.empty:
         st.markdown("### 📊 Monthly Breakdown Charts")
@@ -567,35 +571,5 @@ elif st.session_state.page == "progress":
         ax2.set_ylabel("km")
         ax2.set_xlabel("Day")
         for bar in bars2:
-            height = bar.get_height()
-            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-        st.pyplot(fig2)
+            height = bar.get_hei_
 
-        fig3, ax3 = plt.subplots()
-        bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
-        ax3.set_title("⏱️ Duration by Day")
-        ax3.set_ylabel("minutes")
-        ax3.set_xlabel("Day")
-        for bar in bars3:
-            height = bar.get_height()
-            ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-        st.pyplot(fig3)
-
-    if not df.empty:
-        st.markdown("### ⚖️ Weight Progress")
-        df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
-        fig4, ax4 = plt.subplots()
-        ax4.plot(df_weight["date"], df_weight["weight_lbs"], marker="o", linestyle="-", color="#FF9800")
-        ax4.set_title("📈 Weight Over Time")
-        ax4.set_ylabel("Weight (lbs)")
-        ax4.set_xlabel("Date")
-        ax4.grid(True)
-        fig4.autofmt_xdate()
-        ax4.tick_params(axis='x', labelrotation=45)
-        st.pyplot(fig4)
-
-        col = st.columns(3)[1]
-        with col:
-            if st.button("🏠 Home"):
-                st.session_state.page = "home"
-                st.rerun()
