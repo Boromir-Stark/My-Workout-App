@@ -528,7 +528,7 @@ elif st.session_state.page == "progress":
     st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
 
-        st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
 
     metrics = [
         {
