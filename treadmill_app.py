@@ -423,19 +423,18 @@ if st.session_state.page == "home":
                 st.session_state.page = "log"
                 st.rerun()
 
-   # ✅ Always visible main menu buttons
-    st.markdown("---")
-    col = st.columns(3)[1]
-    with col:
-        if st.button("\ud83c\udfcb\ufe0f Log Activity"):
-            st.session_state.page = "log"
-            st.rerun()
-        if st.button("\ud83d\udcca My Progress"):
-            st.session_state.page = "progress"
-            st.rerun()
-        if st.button("\u2699\ufe0f My Settings"):
-            st.session_state.page = "settings"
-            st.rerun()
+# ✅ Always visible main menu buttons (clean version)
+menu_col = st.columns(3)[1]
+with menu_col:
+    if st.button("🏋️ Log Activity", key="log_activity_btn"):
+        st.session_state.page = "log"
+        st.rerun()
+    if st.button("📊 My Progress", key="progress_btn"):
+        st.session_state.page = "progress"
+        st.rerun()
+    if st.button("⚙️ My Settings", key="settings_btn"):
+        st.session_state.page = "settings"
+        st.rerun()
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
     st.title("⚙️ My Settings")
