@@ -606,7 +606,7 @@ elif st.session_state.page == "progress":
             st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
 
 
-    if not df_month.empty:
+        if not df_month.empty:
         st.markdown("<h3 style='text-align:center;'>📊 Monthly Breakdown Charts</h3>", unsafe_allow_html=True)
         df_bar = df_month.sort_values("date")
         labels = df_bar["date"].dt.strftime("%d")
@@ -665,3 +665,4 @@ elif st.session_state.page == "progress":
             if st.button("🏠 Home"):
                 st.session_state.page = "home"
                 st.rerun()
+
