@@ -523,9 +523,10 @@ elif st.session_state.page == "progress":
     """, unsafe_allow_html=True)
 
     st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}")
-    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs")
-    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs")
+    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
+    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
+    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
+
 
     st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
     col_curr, col_prev = st.columns(2)
