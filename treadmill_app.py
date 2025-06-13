@@ -622,17 +622,19 @@ elif st.session_state.page == "progress":
             ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
                          xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
         st.pyplot(fig1)
-
         # 🛣️ Distance Chart
-        fig2, ax2 = plt.subplots()
-        bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
-        ax2.set_title("🛣️ Distance by Day")
-        ax2.set_ylabel("km")
-        ax2.set_xlabel("Day")
-        for bar in bars2:
-            height = bar.get_height()
-            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+fig2, ax2 = plt.subplots()
+bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
+ax2.set_title("🛣️ Distance by Day")
+ax2.set_ylabel("km")
+ax2.set_xlabel("Day")
+for bar in bars2:
+    height = bar.get_height()
+    ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                 xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+
+
+        
         st.pyplot(fig2)
 
         # ⏱️ Duration Chart
