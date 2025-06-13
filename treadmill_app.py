@@ -55,7 +55,8 @@ if "user" not in st.session_state:
     st.session_state.user = "Default"
 if "df" not in st.session_state:
     st.session_state.df = None
-    # ─── DATA HELPERS ───
+
+# ─── DATA HELPERS ───
 def load_data(user_id):
     try:
         data = sheet.worksheet(WORKOUT_TAB).get_all_records()
@@ -70,6 +71,7 @@ def load_data(user_id):
     except Exception as e:
         st.error(f"Workout Load Error: {e}")
         return pd.DataFrame(columns=["date", "weight_lbs", "time_min", "distance_km", "vertical_feet", "calories", "activity", "user"])
+
 
 def save_data(user_id, df_new_rows):
     try:
