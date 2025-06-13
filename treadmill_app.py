@@ -583,8 +583,7 @@ elif st.session_state.page == "progress":
             "fmt": "{:.2f}"
         }
     ]
-
-    # Split metrics evenly into 2 columns
+     # Split metrics evenly into 2 columns
 col1, col2 = st.columns(2)
 half = (len(metrics) + 1) // 2
 
@@ -604,6 +603,8 @@ for idx, metric in enumerate(metrics):
         st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
         st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
         st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
+
+   
 
 # ─── Monthly Breakdown Charts ───
 if not df_month.empty:
