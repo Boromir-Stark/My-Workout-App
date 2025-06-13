@@ -465,7 +465,8 @@ elif st.session_state.page == "settings":
 
 # ─── PROGRESS PAGE ───
 elif st.session_state.page == "progress":
-    st.title("📊 My Progress")
+    st.markdown("<h1 style='text-align:center;'>📊 My Progress</h1>", unsafe_allow_html=True)
+
     height_m = settings["height_cm"] / 100
     current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
     current_bmi = (current_weight * 0.453592) / (height_m ** 2)
@@ -511,9 +512,10 @@ elif st.session_state.page == "progress":
     vertical_sum = df_month["vertical_feet"].sum()
     vertical_prev = df_prev["vertical_feet"].sum()
 
-    st.markdown("<h4 style='color: orange;'>Goal Progress</h4>", unsafe_allow_html=True)
+    # Goal Progress
+    st.markdown("<h3 style='text-align:center; color: orange;'>Goal Progress</h3>", unsafe_allow_html=True)
     percent = min(total_km / goal_km, 1.0)
-    st.markdown(f"<div style='font-size:20px;'><strong>{total_km:.1f} km</strong> of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align:center; font-size:20px;'><strong>{total_km:.1f} km</strong> of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
     st.markdown(f"""
         <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
           <div style="background-color:{BG_WORKOUT}; width:{percent*100:.1f}%; height:100%; text-align:center; color:{TEXT_COLOR}; line-height:30px; font-weight:600; border-radius:8px; font-size:18px;">
@@ -522,45 +524,43 @@ elif st.session_state.page == "progress":
         </div>
     """, unsafe_allow_html=True)
 
-    # ─── TARGET WEIGHT & BMI ───
-st.markdown("<h4 style='color: orange; text-align:center;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
-st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
-st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
+    # Target Weight & BMI
+    st.markdown("<h3 style='text-align:center; color: orange;'>Target Weight & BMI</h3>", unsafe_allow_html=True)
+    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
+    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
+    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
-# ─── MONTHLY SUMMARY ───
-st.markdown("<h4 style='color: orange; text-align:center;'>Monthly Summary</h4>", unsafe_allow_html=True)
+    # Monthly Summary
+    st.markdown("<h3 style='text-align:center; color: orange;'>Monthly Summary</h3>", unsafe_allow_html=True)
+    metrics = [
+        {"label": "Workouts", "icon": "🏋️", "this": len(df_month), "last": len(df_prev), "unit": ""},
+        {"label": "Active Days", "icon": "🗓️", "this": workout_days, "last": workout_days_prev, "unit": ""},
+        {"label": "Distance", "icon": "🚣️", "this": total_km, "last": total_km_prev, "unit": " km", "fmt": "{:.2f}"},
+        {"label": "Vertical Climb", "icon": "🧗", "this": vertical_sum, "last": vertical_prev, "unit": " ft"},
+        {"label": "Duration", "icon": "⏱️", "this": total_min, "last": total_min_prev, "unit": " min"},
+        {"label": "Calories", "icon": "🔥", "this": total_kcal, "last": total_kcal_prev, "unit": " kcal"},
+        {"label": "Avg Speed", "icon": "🚀", "this": avg_speed, "last": avg_speed_prev, "unit": " km/h", "fmt": "{:.2f}"}
+    ]
 
-metrics = [
-    {"label": "Workouts", "icon": "🏋️", "this": len(df_month), "last": len(df_prev), "unit": ""},
-    {"label": "Active Days", "icon": "🗓️", "this": workout_days, "last": workout_days_prev, "unit": ""},
-    {"label": "Distance", "icon": "🛣️", "this": total_km, "last": total_km_prev, "unit": " km", "fmt": "{:.2f}"},
-    {"label": "Vertical Climb", "icon": "🧗", "this": vertical_sum, "last": vertical_prev, "unit": " ft"},
-    {"label": "Duration", "icon": "⏱️", "this": total_min, "last": total_min_prev, "unit": " min"},
-    {"label": "Calories", "icon": "🔥", "this": total_kcal, "last": total_kcal_prev, "unit": " kcal"},
-    {"label": "Avg Speed", "icon": "🚀", "this": avg_speed, "last": avg_speed_prev, "unit": " km/h", "fmt": "{:.2f}"}
-]
+    col1, col2 = st.columns(2)
+    half = (len(metrics) + 1) // 2
 
-# Split metrics evenly into 2 columns
-col1, col2 = st.columns(2)
-half = (len(metrics) + 1) // 2
+    for idx, metric in enumerate(metrics):
+        col = col1 if idx < half else col2
+        with col:
+            label = metric["label"]
+            icon = metric["icon"]
+            val_this = metric["this"]
+            val_last = metric["last"]
+            unit = metric.get("unit", "")
+            fmt = metric.get("fmt", "{:.0f}")
 
-for idx, metric in enumerate(metrics):
-    col = col1 if idx < half else col2
-    with col:
-        label = metric["label"]
-        icon = metric["icon"]
-        val_this = metric["this"]
-        val_last = metric["last"]
-        unit = metric.get("unit", "")
-        fmt = metric.get("fmt", "{:.0f}")
+            this_value = fmt.format(val_this)
+            last_value = fmt.format(val_last)
 
-        this_value = fmt.format(val_this)
-        last_value = fmt.format(val_last)
-
-        st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
-        st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
-        st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
+            st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
+            st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
+            st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
 
 
 # ─── Monthly Breakdown Charts ───
