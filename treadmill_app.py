@@ -522,13 +522,12 @@ elif st.session_state.page == "progress":
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h4 style='color: orange;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
-    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
-    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
-    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: orange; text-align:center;'>Target Weight & BMI</h4>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align:center;'>📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align:center;'>⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align:center;'>🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs</div>", unsafe_allow_html=True)
 
-
-    st.markdown("<h4 style='color: orange;'>Monthly Summary</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: orange; text-align:center;'>Monthly Summary</h4>", unsafe_allow_html=True)
 
     metrics = [
         {
@@ -583,26 +582,28 @@ elif st.session_state.page == "progress":
             "fmt": "{:.2f}"
         }
     ]
-     # Split metrics evenly into 2 columns
-col1, col2 = st.columns(2)
-half = (len(metrics) + 1) // 2
 
-for idx, metric in enumerate(metrics):
-    col = col1 if idx < half else col2
-    with col:
-        label = metric["label"]
-        icon = metric["icon"]
-        val_this = metric["this"]
-        val_last = metric["last"]
-        unit = metric.get("unit", "")
-        fmt = metric.get("fmt", "{:.0f}")
+    # Split metrics evenly into 2 columns
+    col1, col2 = st.columns(2)
+    half = (len(metrics) + 1) // 2
 
-        this_value = fmt.format(val_this)
-        last_value = fmt.format(val_last)
+    for idx, metric in enumerate(metrics):
+        col = col1 if idx < half else col2
+        with col:
+            label = metric["label"]
+            icon = metric["icon"]
+            val_this = metric["this"]
+            val_last = metric["last"]
+            unit = metric.get("unit", "")
+            fmt = metric.get("fmt", "{:.0f}")
 
-        st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
-        st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
-        st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
+            this_value = fmt.format(val_this)
+            last_value = fmt.format(val_last)
+
+            st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align:center;'>• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align:center;'>• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}</div>", unsafe_allow_html=True)
+
 
    
 
