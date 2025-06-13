@@ -406,9 +406,9 @@ if st.session_state.page == "home":
         except Exception:
             match = pd.DataFrame()
 
-        if not match.empty:
-    st.markdown(f"### 📝 Activities on {selected.strftime('%B %d')}")
-    for i, (_, row) in enumerate(match.iterrows(), 1):
+    if not match.empty:
+        st.markdown(f"### 📝 Activities on {selected.strftime('%B %d')}")
+        for i, (_, row) in enumerate(match.iterrows(), 1):
         st.markdown(f"**Activity {i}:** `{row.get('activity', 'Walk')}`")
         st.markdown(f"- Duration: `{row['time_min']} min`")
         st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
