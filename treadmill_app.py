@@ -203,23 +203,38 @@ if st.session_state.page != "home":
 if st.session_state.page == "log":
     with st.form("log_form"):
         st.title("🏋️ Log Activity")
+
+        activity = st.selectbox("Activity Type", [
+            "Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"
+        ])
+
         date = st.date_input("Date", value=st.session_state.get("log_for_date", datetime.today()))
         last_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else ""
         weight = st.text_input("Weight (lbs)", value=str(last_weight))
         time = st.text_input("Time (min)")
 
-        distance_col1, distance_col2 = st.columns([3, 1])
-        with distance_col1:
-            distance = st.text_input("Distance")
-        with distance_col2:
-            unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
+        requires_distance = activity in ["Walk", "Rollerblade", "Stationary Bike"]
+        requires_vertical = activity in ["Walk", "Rollerblade", "Stationary Bike"]
 
-        vertical = st.text_input("Vertical Distance (ft)", value="")
-        activity = st.selectbox("Activity Type", ["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"])
+        if requires_distance:
+            distance_col1, distance_col2 = st.columns([3, 1])
+            with distance_col1:
+                distance = st.text_input("Distance")
+            with distance_col2:
+                unit = st.radio(" ", ["miles", "km"], index=0, horizontal=True)
+        else:
+            distance = None
+            unit = "km"
 
-        intensity = None
+        if requires_vertical:
+            vertical = st.text_input("Vertical Distance (ft)")
+        else:
+            vertical = None
+
         if activity in ["Basketball (21)", "Spikeball", "Soccer"]:
             intensity = st.selectbox("Intensity", ["Low", "Moderate", "High"])
+        else:
+            intensity = None
 
         submitted = st.form_submit_button("Save Activity")
 
@@ -229,10 +244,10 @@ if st.session_state.page == "log":
             else:
                 w = parse_float(weight, "Weight")
                 t = parse_float(time, "Time")
-                d = parse_float(distance, "Distance")
-                vert = parse_float(vertical, "Vertical Distance", required=False)
+                d = parse_float(distance, "Distance") if distance else 0
+                vert = parse_float(vertical, "Vertical Distance", required=False) if vertical else 0
 
-                if None in [w, t, d]:
+                if None in [w, t]:
                     st.error("❌ Please fix the inputs.")
                 else:
                     dist_km = d * 1.60934 if unit == "miles" else d
@@ -240,8 +255,10 @@ if st.session_state.page == "log":
                     time_hr = t / 60
 
                     MET = 3.5
-                    if activity == "Rollerblade": MET = 9.0
-                    elif activity == "Stationary Bike": MET = 7.5
+                    if activity == "Rollerblade":
+                        MET = 9.0
+                    elif activity == "Stationary Bike":
+                        MET = 7.5
                     elif activity == "Basketball (21)":
                         MET = {"Low": 4.5, "Moderate": 6.5, "High": 8.0}[intensity]
                     elif activity == "Spikeball":
@@ -251,9 +268,10 @@ if st.session_state.page == "log":
 
                     cal_flat = MET * w_kg * time_hr
                     cal_climb = 0
-                    if vert is not None:
+                    if vert:
                         vertical_m = vert * 0.3048
                         cal_climb = (w_kg * vertical_m * 9.81) / 0.25 / 4184
+
                     kcal = cal_flat + cal_climb
 
                     parsed_date = pd.to_datetime(date)
