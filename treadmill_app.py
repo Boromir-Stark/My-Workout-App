@@ -146,7 +146,8 @@ def get_all_users_with_names():
         return [(r["user"], r.get("name", r["user"])) for r in records]
     except Exception:
         return []
-        # ─── USER SELECTION ───
+
+# ─── USER SELECTION ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
 display_names = [name for _, name in user_list]
@@ -202,6 +203,7 @@ if st.session_state.page != "home":
             st.session_state.page = "home"
             st.rerun()
 
+# ─── LOG PAGE ───
 if st.session_state.page == "log":
     st.title("🏋️ Log Activity")
 
@@ -294,6 +296,7 @@ if st.session_state.page == "log":
                     st.session_state.selected_day = date
                     st.session_state.page = "home"
                     st.rerun()
+
 # ─── HOME PAGE ───
 elif st.session_state.page == "home":
     local_tz = pytz.timezone("America/Toronto")
@@ -397,8 +400,7 @@ elif st.session_state.page == "home":
                         st.session_state.page = "log"
                         st.rerun()
 
-# ─── HOME PAGE CONTINUED ───
-if st.session_state.page == "home":
+    # ─── SELECTED DAY DETAILS ───
     if st.session_state.selected_day:
         st.markdown("---")
         selected = st.session_state.selected_day
@@ -425,18 +427,20 @@ if st.session_state.page == "home":
                 st.session_state.page = "log"
                 st.rerun()
 
-# ✅ Always visible main menu buttons (clean version)
-menu_col = st.columns(3)[1]
-with menu_col:
-    if st.button("🏋️ Log Activity", key="log_activity_btn"):
-        st.session_state.page = "log"
-        st.rerun()
-    if st.button("📊 My Progress", key="progress_btn"):
-        st.session_state.page = "progress"
-        st.rerun()
-    if st.button("⚙️ My Settings", key="settings_btn"):
-        st.session_state.page = "settings"
-        st.rerun()
+# ─── MAIN MENU BUTTONS ───
+if st.session_state.page == "home":
+    menu_col = st.columns(3)[1]
+    with menu_col:
+        if st.button("🏋️ Log Activity", key="log_activity_btn"):
+            st.session_state.page = "log"
+            st.rerun()
+        if st.button("📊 My Progress", key="progress_btn"):
+            st.session_state.page = "progress"
+            st.rerun()
+        if st.button("⚙️ My Settings", key="settings_btn"):
+            st.session_state.page = "settings"
+            st.rerun()
+
 # ─── SETTINGS PAGE ───
 elif st.session_state.page == "settings":
     st.title("⚙️ My Settings")
@@ -469,8 +473,8 @@ elif st.session_state.page == "progress":
     st.markdown("<h1 style='text-align:center;'>📊 My Progress</h1>", unsafe_allow_html=True)
 
     height_m = settings["height_cm"] / 100
-    current_weight = df.sort_values("date").iloc[-1]["weight_lbs"]
-    current_bmi = (current_weight * 0.453592) / (height_m ** 2)
+    current_weight = df.sort_values("date").iloc[-1]["weight_lbs"] if not df.empty else 0
+    current_bmi = (current_weight * 0.453592) / (height_m ** 2) if current_weight > 0 else 0
     target_weight = TARGET_BMI * (height_m ** 2) / 0.453592
 
     current_month = st.session_state.selected_month
@@ -515,7 +519,7 @@ elif st.session_state.page == "progress":
 
     # Goal Progress
     st.markdown("<h3 style='text-align:center; color: orange;'>Goal Progress</h3>", unsafe_allow_html=True)
-    percent = min(total_km / goal_km, 1.0)
+    percent = min(total_km / goal_km, 1.0) if goal_km > 0 else 0
     st.markdown(f"<div style='text-align:center; font-size:20px;'><strong>{total_km:.1f} km</strong> of {goal_km} km ({percent*100:.1f}%)</div>", unsafe_allow_html=True)
     st.markdown(f"""
         <div style="background-color:#ddd; border-radius:8px; width:100%; height:30px; border: 1px solid #ccc;">
@@ -526,10 +530,11 @@ elif st.session_state.page == "progress":
     """, unsafe_allow_html=True)
 
     # Target Weight & BMI
-    st.markdown("<h3 style='text-align:center; color: orange;'>Target Weight & BMI</h3>", unsafe_allow_html=True)
-    st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
-    st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
-    st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
+    if current_weight > 0:
+        st.markdown("<h3 style='text-align:center; color: orange;'>Target Weight & BMI</h3>", unsafe_allow_html=True)
+        st.markdown(f"📉 <strong>Current BMI:</strong> {current_bmi:.1f} vs Target: {TARGET_BMI}", unsafe_allow_html=True)
+        st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
+        st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
     # Monthly Summary
     st.markdown("<h3 style='text-align:center; color: orange;'>Monthly Summary</h3>", unsafe_allow_html=True)
@@ -563,6 +568,7 @@ elif st.session_state.page == "progress":
             st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
             st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
 
+    
 
 # ─── Monthly Breakdown Charts ───
 if not df_month.empty:
