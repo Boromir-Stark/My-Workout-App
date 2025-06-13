@@ -27,6 +27,16 @@ TEXT_COLOR = "#003547"
 BG_EMPTY = "#eeeeee"
 BORDER = "#2196f3"
 
+# ─── ACTIVITY ICONS MAPPING ───
+ACTIVITY_ICONS = {
+    "Walk": "🚶",
+    "Rollerblade": "⛸️",
+    "Stationary Bike": "🚴",
+    "Basketball (21)": "🏀",
+    "Spikeball": "🏐",
+    "Soccer": "⚽"
+}
+
 # ─── GOOGLE SHEETS AUTH ───
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 gcp_info = dict(st.secrets["gcp"])
@@ -147,6 +157,17 @@ def get_all_users_with_names():
     except Exception:
         return []
 
+def get_activity_icon(activity):
+    """Get the icon for a given activity type"""
+    return ACTIVITY_ICONS.get(activity, "🏃")
+
+def get_dominant_activity_for_day(df_day):
+    """Get the activity with the most time for a given day"""
+    if df_day.empty:
+        return None
+    activity_time = df_day.groupby('activity')['time_min'].sum()
+    return activity_time.idxmax()
+
 # ─── USER SELECTION ───
 user_list = get_all_users_with_names()
 user_ids = [uid for uid, _ in user_list]
@@ -211,13 +232,17 @@ if st.session_state.page == "log":
     if "log_activity_type" not in st.session_state:
         st.session_state.log_activity_type = "Walk"
 
-    st.session_state.log_activity_type = st.selectbox(
-        "Activity Type",
-        ["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"],
-        index=["Walk", "Rollerblade", "Stationary Bike", "Basketball (21)", "Spikeball", "Soccer"].index(st.session_state.log_activity_type)
-    )
-
+    # Enhanced activity selection with icons
+    activity_options = list(ACTIVITY_ICONS.keys())
+    activity_display = [f"{ACTIVITY_ICONS[act]} {act}" for act in activity_options]
+    
+    current_idx = activity_options.index(st.session_state.log_activity_type)
+    selected_display = st.selectbox("Activity Type", activity_display, index=current_idx)
+    
+    # Extract activity name from display
+    st.session_state.log_activity_type = selected_display.split(" ", 1)[1]
     activity = st.session_state.log_activity_type
+    
     requires_distance = activity in ["Walk", "Rollerblade", "Stationary Bike"]
     requires_vertical = activity in ["Walk", "Rollerblade", "Stationary Bike"]
     needs_intensity = activity in ["Basketball (21)", "Spikeball", "Soccer"]
@@ -361,9 +386,19 @@ elif st.session_state.page == "home":
             in_current_month = day.month == current_month.month
             is_today = (day == today)
             is_selected = (st.session_state.selected_day == day)
-            has_workout = not df[df["date"].dt.date == day].empty
+            
+            # Get workouts for this day and determine dominant activity
+            df_day = df[df["date"].dt.date == day]
+            has_workout = not df_day.empty
+            
+            # Use activity icon instead of fire emoji
+            if has_workout:
+                dominant_activity = get_dominant_activity_for_day(df_day)
+                emoji = get_activity_icon(dominant_activity)
+            else:
+                emoji = ""
+            
             bg_color = BG_WORKOUT if has_workout else (BG_EMPTY if in_current_month else "#cccccc")
-            emoji = "🔥" if has_workout else ""
             top_line = f"{day.day} {emoji}".strip()
             bottom_line = "📍" if is_today else ""
             btn_label = f"{top_line}{bottom_line}".strip()
@@ -413,7 +448,8 @@ elif st.session_state.page == "home":
         if not match.empty:
             st.markdown(f"### 📝 Activities on {selected.strftime('%B %d')}")
             for i, (_, row) in enumerate(match.iterrows(), 1):
-                st.markdown(f"**Activity {i}:** `{row.get('activity', 'Walk')}`")
+                activity_icon = get_activity_icon(row.get('activity', 'Walk'))
+                st.markdown(f"**Activity {i}:** {activity_icon} `{row.get('activity', 'Walk')}`")
                 st.markdown(f"- Duration: `{row['time_min']} min`")
                 st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
                 st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
@@ -536,83 +572,225 @@ elif st.session_state.page == "progress":
         st.markdown(f"⚖️ <strong>Current Weight:</strong> {current_weight:.1f} lbs", unsafe_allow_html=True)
         st.markdown(f"🎯 <strong>Target Weight:</strong> {target_weight:.0f} lbs", unsafe_allow_html=True)
 
-    # Monthly Summary
-    st.markdown("<h3 style='text-align:center; color: orange;'>Monthly Summary</h3>", unsafe_allow_html=True)
-    metrics = [
-        {"label": "Workouts", "icon": "🏋️", "this": len(df_month), "last": len(df_prev), "unit": ""},
-        {"label": "Active Days", "icon": "🗓️", "this": workout_days, "last": workout_days_prev, "unit": ""},
-        {"label": "Distance", "icon": "🚣️", "this": total_km, "last": total_km_prev, "unit": " km", "fmt": "{:.2f}"},
-        {"label": "Vertical Climb", "icon": "🧗", "this": vertical_sum, "last": vertical_prev, "unit": " ft"},
-        {"label": "Duration", "icon": "⏱️", "this": total_min, "last": total_min_prev, "unit": " min"},
-        {"label": "Calories", "icon": "🔥", "this": total_kcal, "last": total_kcal_prev, "unit": " kcal"},
-        {"label": "Avg Speed", "icon": "🚀", "this": avg_speed, "last": avg_speed_prev, "unit": " km/h", "fmt": "{:.2f}"}
-    ]
+    # ─── NEW: ACTIVITY TYPE BREAKDOWN PIE CHART ───
+    if not df_month.empty:
+        st.markdown("<h3 style='text-align:center; color: orange;'>🥧 Activity Type Breakdown</h3>", unsafe_allow_html=True)
+        
+        # Calculate time spent on each activity
+        activity_time = df_month.groupby('activity')['time_min'].sum()
+        
+        if len(activity_time) > 0:
+            fig_pie, ax_pie = plt.subplots(figsize=(8, 8))
+            
+            # Create labels with icons and percentages
+            labels = []
+            for activity, time_min in activity_time.items():
+                icon = get_activity_icon(activity)
+                percentage = (time_min / activity_time.sum()) * 100
+                labels.append(f"{icon} {activity}\n({percentage:.1f}%)")
+            
+            # Use distinct colors for different activities
+            colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
+            
+            wedges, texts, autotexts = ax_pie.pie(
+                activity_time.values, 
+                labels=labels, 
+                autopct=lambda pct: f'{pct:.1f}%' if pct > 5 else '',
+                colors=colors[:len(activity_time)],
+                startangle=90
+            )
+            
+            ax_pie.set_title("Time Distribution by Activity Type", fontsize=16, fontweight='bold')
+            
+            # Make text more readable
+            for text in texts:
+                text.set_fontsize(10)
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(9)
+            
+            st.pyplot(fig_pie)
+            
+            # Show activity summary table
+            st.markdown("#### Activity Summary")
+            activity_summary = df_month.groupby('activity').agg({
+                'time_min': 'sum',
+                'distance_km': 'sum',
+                'calories': 'sum',
+                'date': 'count'
+            }).round(2)
+            activity_summary.columns = ['Total Time (min)', 'Total Distance (km)', 'Total Calories', 'Sessions']
+            
+            # Add icons to the index
+            activity_summary.index = [f"{get_activity_icon(activity)} {activity}" for activity in activity_summary.index]
+            
+            st.dataframe(activity_summary, use_container_width=True)
 
-    col1, col2 = st.columns(2)
-    half = (len(metrics) + 1) // 2
+    # ─── NEW: ACTIVITY COMPARISON CHART ───
+    if not df_month.empty:
+        st.markdown("<h3 style='text-align:center; color: orange;'>⚔️ Activity Comparison</h3>", unsafe_allow_html=True)
+        
+        # Calculate calories per hour for each activity
+        activity_comparison = df_month.groupby('activity').agg({
+            'calories': 'sum',
+            'time_min': 'sum',
+            'distance_km': 'sum'
+        })
+        
+        # Calculate efficiency metrics
+        activity_comparison['calories_per_hour'] = (activity_comparison['calories'] / (activity_comparison['time_min'] / 60)).round(1)
+        activity_comparison['avg_speed_kmh'] = (activity_comparison['distance_km'] / (activity_comparison['time_min'] / 60)).round(2)
+        activity_comparison['calories_per_km'] = (activity_comparison['calories'] / activity_comparison['distance_km']).round(1)
+        
+        # Replace inf and NaN values
+        activity_comparison = activity_comparison.replace([float('inf'), -float('inf')], 0)
+        activity_comparison = activity_comparison.fillna(0)
+        
+        if len(activity_comparison) > 1:
+            # Create comparison charts
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Calories per hour comparison
+                fig_comp1, ax_comp1 = plt.subplots(figsize=(10, 6))
+                activities = list(activity_comparison.index)
+                cal_per_hour = activity_comparison['calories_per_hour'].values
+                
+                # Create bars with activity icons as labels
+                bars = ax_comp1.bar(range(len(activities)), cal_per_hour, 
+                                  color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'][:len(activities)])
+                
+                ax_comp1.set_title("🔥 Calories Burned per Hour")
+                ax_comp1.set_ylabel("Calories/Hour")
+                ax_comp1.set_xlabel("Activity Type")
+                
+                # Set x-axis labels with icons
+                ax_comp1.set_xticks(range(len(activities)))
+                ax_comp1.set_xticklabels([f"{get_activity_icon(act)}\n{act}" for act in activities], rotation=45, ha='right')
+                
+                # Add value labels on bars
+                for i, bar in enumerate(bars):
+                    height = bar.get_height()
+                    if height > 0:
+                        ax_comp1.annotate(f'{height:.0f}', 
+                                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3), textcoords="offset points", 
+                                        ha='center', fontsize=10, fontweight='bold')
+                
+                plt.tight_layout()
+                st.pyplot(fig_comp1)
+            
+            with col2:
+                # Average speed comparison (only for activities with distance)
+                speed_data = activity_comparison[activity_comparison['avg_speed_kmh'] > 0]
+                
+                if len(speed_data) > 0:
+                    fig_comp2, ax_comp2 = plt.subplots(figsize=(10, 6))
+                    speed_activities = list(speed_data.index)
+                    speeds = speed_data['avg_speed_kmh'].values
+                    
+                    bars2 = ax_comp2.bar(range(len(speed_activities)), speeds,
+                                       color=['#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#FF6B6B', '#4ECDC4'][:len(speed_activities)])
+                    
+                    ax_comp2.set_title("🚀 Average Speed Comparison")
+                    ax_comp2.set_ylabel("Speed (km/h)")
+                    ax_comp2.set_xlabel("Activity Type")
+                    
+                    ax_comp2.set_xticks(range(len(speed_activities)))
+                    ax_comp2.set_xticklabels([f"{get_activity_icon(act)}\n{act}" for act in speed_activities], rotation=45, ha='right')
+                    
+                    # Add value labels on bars
+                    for i, bar in enumerate(bars2):
+                        height = bar.get_height()
+                        if height > 0:
+                            ax_comp2.annotate(f'{height:.1f}', 
+                                            xy=(bar.get_x() + bar.get_width() / 2, height),
+                                            xytext=(0, 3), textcoords="offset points", 
+                                            ha='center', fontsize=10, fontweight='bold')
+                    
+                    plt.tight_layout()
+                    st.pyplot(fig_comp2)
+                else:
+                    st.info("No distance-based activities to compare speeds")
+            
+            # Efficiency comparison table
+            st.markdown("#### 📊 Activity Efficiency Comparison")
+            efficiency_table = activity_comparison[['calories_per_hour', 'avg_speed_kmh', 'calories_per_km']].copy()
+            efficiency_table.columns = ['Calories/Hour', 'Avg Speed (km/h)', 'Calories/km']
+            
+            # Add icons to the index
+            efficiency_table.index = [f"{get_activity_icon(activity)} {activity}" for activity in efficiency_table.index]
+            
+            # Color code the best values in each column
+            st.dataframe(efficiency_table, use_container_width=True)
+            
+            # Show which activity is most efficient for different goals
+            st.markdown("#### 🏆 Best Activities For:")
+            best_calories = activity_comparison['calories_per_hour'].idxmax()
+            best_speed = activity_comparison[activity_comparison['avg_speed_kmh'] > 0]['avg_speed_kmh'].idxmax() if len(activity_comparison[activity_comparison['avg_speed_kmh'] > 0]) > 0 else "N/A"
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown(f"**🔥 Max Calories/Hour:**<br>{get_activity_icon(best_calories)} {best_calories}", unsafe_allow_html=True)
+            with col2:
+                if best_speed != "N/A":
+                    st.markdown(f"**🚀 Highest Speed:**<br>{get_activity_icon(best_speed)} {best_speed}", unsafe_allow_html=True)
+                else:
+                    st.markdown("**🚀 Highest Speed:**<br>N/A", unsafe_allow_html=True)
+            with col3:
+                if len(activity_comparison[activity_comparison['calories_per_km'] > 0]) > 0:
+                    best_efficiency = activity_comparison[activity_comparison['calories_per_km'] > 0]['calories_per_km'].idxmax()
+                    st.markdown(f"**⚡ Most Efficient:**<br>{get_activity_icon(best_efficiency)} {best_efficiency}", unsafe_allow_html=True)
+                else:
+                    st.markdown("**⚡ Most Efficient:**<br>N/A", unsafe_allow_html=True)
+        
+        else:
+            st.info("Need at least 2 different activity types to show comparison")
 
-    for idx, metric in enumerate(metrics):
-        col = col1 if idx < half else col2
-        with col:
-            label = metric["label"]
-            icon = metric["icon"]
-            val_this = metric["this"]
-            val_last = metric["last"]
-            unit = metric.get("unit", "")
-            fmt = metric.get("fmt", "{:.0f}")
-
-            this_value = fmt.format(val_this)
-            last_value = fmt.format(val_last)
-
-            st.markdown(f"<h5 style='margin-bottom:0.2rem; text-align:center'>{icon} <strong>{label}</strong></h5>", unsafe_allow_html=True)
-            st.markdown(f"• <strong>This Month:</strong> {this_value}{unit}{raw_delta(val_this, val_last, unit)}", unsafe_allow_html=True)
-            st.markdown(f"• <strong>Last Month:</strong> {last_value}{unit}{percent_delta(val_this, val_last)}", unsafe_allow_html=True)
-
-    
-
-# ─── Monthly Breakdown Charts ───
+    # ─── Monthly Breakdown Charts ───
     if not df_month.empty:
         st.markdown("<h3 style='text-align:center;'>📊 Monthly Breakdown Charts</h3>", unsafe_allow_html=True)
         df_bar = df_month.sort_values("date")
         labels = df_bar["date"].dt.strftime("%d")
 
-    # 🔥 Calories Chart
-    fig1, ax1 = plt.subplots()
-    bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
-    ax1.set_title("🔥 Calories by Day")
-    ax1.set_ylabel("kcal")
-    ax1.set_xlabel("Day")
-    for bar in bars1:
-        height = bar.get_height()
-        ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                     xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-    st.pyplot(fig1)
+        # 🔥 Calories Chart
+        fig1, ax1 = plt.subplots()
+        bars1 = ax1.bar(labels, df_bar["calories"], color="#FF5722")
+        ax1.set_title("🔥 Calories by Day")
+        ax1.set_ylabel("kcal")
+        ax1.set_xlabel("Day")
+        for bar in bars1:
+            height = bar.get_height()
+            ax1.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig1)
 
-    # 🛣️ Distance Chart
-    fig2, ax2 = plt.subplots()
-    bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
-    ax2.set_title("🛣️ Distance by Day")
-    ax2.set_ylabel("km")
-    ax2.set_xlabel("Day")
-    for bar in bars2:
-        height = bar.get_height()
-        ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                     xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-    st.pyplot(fig2)
+        # 🛣️ Distance Chart
+        fig2, ax2 = plt.subplots()
+        bars2 = ax2.bar(labels, df_bar["distance_km"], color="#2196F3")
+        ax2.set_title("🛣️ Distance by Day")
+        ax2.set_ylabel("km")
+        ax2.set_xlabel("Day")
+        for bar in bars2:
+            height = bar.get_height()
+            ax2.annotate(f'{height:.2f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig2)
 
-    # ⏱️ Duration Chart
-    fig3, ax3 = plt.subplots()
-    bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
-    ax3.set_title("⏱️ Duration by Day")
-    ax3.set_ylabel("minutes")
-    ax3.set_xlabel("Day")
-    for bar in bars3:
-        height = bar.get_height()
-        ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
-                     xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-    st.pyplot(fig3)
+        # ⏱️ Duration Chart
+        fig3, ax3 = plt.subplots()
+        bars3 = ax3.bar(labels, df_bar["time_min"], color="#4CAF50")
+        ax3.set_title("⏱️ Duration by Day")
+        ax3.set_ylabel("minutes")
+        ax3.set_xlabel("Day")
+        for bar in bars3:
+            height = bar.get_height()
+            ax3.annotate(f'{height:.0f}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+        st.pyplot(fig3)
 
-# ─── Weight Progress ───
+    # ─── Weight Progress ───
     if not df.empty:
         st.markdown("<h3 style='text-align:center;'>⚖️ Weight Progress</h3>", unsafe_allow_html=True)
         df_weight = df[df["weight_lbs"].notnull()].sort_values("date")
