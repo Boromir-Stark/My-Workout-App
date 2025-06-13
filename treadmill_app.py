@@ -407,13 +407,14 @@ if st.session_state.page == "home":
             match = pd.DataFrame()
 
         if not match.empty:
-            row = match.iloc[0]
-            st.markdown(f"### 📝 Summary for {selected.strftime('%B %d')}")
-            st.markdown(f"- Activity: `{row.get('activity', 'Walk')}`")
-            st.markdown(f"- Duration: `{row['time_min']} min`")
-            st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
-            st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
-            st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
+    st.markdown(f"### 📝 Activities on {selected.strftime('%B %d')}")
+    for i, (_, row) in enumerate(match.iterrows(), 1):
+        st.markdown(f"**Activity {i}:** `{row.get('activity', 'Walk')}`")
+        st.markdown(f"- Duration: `{row['time_min']} min`")
+        st.markdown(f"- Distance: `{row['distance_km']:.2f} km`")
+        st.markdown(f"- Calories: `{row['calories']:.0f} kcal`")
+        st.markdown(f"- Vertical Climb: `{row['vertical_feet']:.0f} ft`")
+        st.markdown("---")
         else:
             st.markdown(f"### ➕ No workout logged for {selected.strftime('%B %d')}")
             if st.button("Log Workout for this Day"):
